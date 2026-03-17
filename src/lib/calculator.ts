@@ -163,13 +163,33 @@ export function calculateStampDuty(price: number, state: AustralianState): numbe
   return 0;
 }
 
+// ============================================================================
+// LMI (Lenders Mortgage Insurance) — Simplified V1 Estimates
+// LMI applies when LVR > 80%. Premium is a % of the base LOAN amount.
+// LMI is capitalised (added to the loan), so interest accrues on it.
+//
+//   LVR 80%  → $0
+//   LVR 85%  → 1.0% of loan
+//   LVR 90%  → 2.0% of loan
+//   LVR 95%  → 3.5% of loan
+// ============================================================================
+
+export function calculateLMI(loanAmount: number, lvr: number): number {
+  if (lvr <= 80 || loanAmount <= 0) return 0;
+  let rate = 0;
+  if (lvr <= 85) rate = 0.01;
+  else if (lvr <= 90) rate = 0.02;
+  else rate = 0.035;
+  return Math.round(loanAmount * rate);
+}
+
 export interface CalculatorInputs {
   purchasePrice: number;
   state: AustralianState;
   renovationCost: number;
   contingencyPercent: number;
   expectedSalePrice: number;
-  loanLVR: number;        // percentage, e.g. 80
+  depositPercent: number;  // 5, 10, 15, or 20 — deposit as % of purchase price
   interestRate: number;   // annual percentage, e.g. 6.5
   holdingPeriodMonths: number;
   agentCommissionPercent: number;
@@ -179,10 +199,13 @@ export interface CalculatorInputs {
 export interface CalculatorResults {
   // Costs
   stampDuty: number;
+  lmi: number;
   legalCostsBuy: number;
   contingencyAmount: number;
   totalRenovationCost: number;
-  loanAmount: number;
+  deposit: number;
+  loanAmount: number;       // base loan = purchasePrice - deposit
+  effectiveLoan: number;    // loanAmount + LMI (interest accrues on this)
   monthlyInterest: number;
   totalInterestCost: number;
   holdingCostsInsurance: number;
@@ -227,15 +250,22 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     renovationCost,
     contingencyPercent,
     expectedSalePrice,
-    loanLVR,
+    depositPercent,
     interestRate,
     holdingPeriodMonths,
     agentCommissionPercent,
     marketingCost,
   } = inputs;
 
+  // --- DEPOSIT & LOAN ---
+  const deposit = Math.round(purchasePrice * (depositPercent / 100));
+  const loanAmount = purchasePrice - deposit;              // base loan
+  const lvr = purchasePrice > 0 ? (loanAmount / purchasePrice) * 100 : 0;
+
   // --- BUYING COSTS ---
   const stampDuty = calculateStampDuty(purchasePrice, state);
+  const lmi = calculateLMI(loanAmount, lvr);               // LMI on base loan
+  const effectiveLoan = loanAmount + lmi;                   // LMI capitalised
   const legalCostsBuy = 1500; // Estimated conveyancing/legal
 
   // --- RENOVATION COSTS ---
@@ -243,9 +273,9 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
   const totalRenovationCost = renovationCost + contingencyAmount;
 
   // --- HOLDING COSTS ---
-  const loanAmount = purchasePrice * (loanLVR / 100);
+  // Interest accrues on the effective loan (base loan + capitalised LMI)
   const monthlyInterestRate = interestRate / 100 / 12;
-  const monthlyInterest = loanAmount * monthlyInterestRate;
+  const monthlyInterest = effectiveLoan * monthlyInterestRate;
   const totalInterestCost = monthlyInterest * holdingPeriodMonths;
 
   // Estimated ongoing costs per month
@@ -268,12 +298,13 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
   const totalProjectCost =
     purchasePrice +
     stampDuty +
+    lmi +
     legalCostsBuy +
     totalRenovationCost +
     totalHoldingCosts +
     totalSellingCosts;
 
-  const cashInvested = totalProjectCost - loanAmount;
+  const cashInvested = totalProjectCost - effectiveLoan;
 
   // --- RETURNS ---
   const estimatedProfit = expectedSalePrice - totalProjectCost;
@@ -312,7 +343,8 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     totalRenovationCost +
     totalHoldingCosts +
     totalSellingCosts +
-    legalCostsBuy;
+    legalCostsBuy +
+    lmi;
 
   // We need to account for stamp duty which depends on purchase price
   // Approximate: maxOffer + stampDuty(maxOffer) + costsExPurchase = expectedSalePrice * (1 - targetProfitMargin)
@@ -339,9 +371,9 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     const agComm = sp * (agentCommissionPercent / 100);
     const sellCosts = agComm + marketingCost + legalCostsSell;
     const totalCost =
-      purchasePrice + stampDuty + legalCostsBuy + totalRenovationCost + totalHoldingCosts + sellCosts;
+      purchasePrice + stampDuty + lmi + legalCostsBuy + totalRenovationCost + totalHoldingCosts + sellCosts;
     const profit = sp - totalCost;
-    const cash = totalCost - loanAmount;
+    const cash = totalCost - effectiveLoan;
     const r = cash > 0 ? (profit / cash) * 100 : 0;
     let outcome: string;
     let color: string;
@@ -356,10 +388,13 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
 
   return {
     stampDuty,
+    lmi,
     legalCostsBuy,
     contingencyAmount,
     totalRenovationCost,
+    deposit,
     loanAmount,
+    effectiveLoan,
     monthlyInterest,
     totalInterestCost,
     holdingCostsInsurance,

@@ -8,6 +8,12 @@ import {
   type CalculatorResults,
 } from "@/lib/calculator";
 import { useTheme } from "@/components/ThemeProvider";
+import RenovationBudget from "@/components/RenovationBudget";
+import {
+  DEFAULT_SECTIONS,
+  grandTotal,
+  type RenovationSection,
+} from "@/lib/renovation-categories";
 import {
   Home as HomeIcon,
   Hammer,
@@ -17,6 +23,7 @@ import {
   Wrench,
   Banknote,
   ShieldAlert,
+  Shield,
   Calculator,
   Sun,
   Moon,
@@ -29,6 +36,9 @@ import {
   MapPin,
   Clock,
   ExternalLink,
+  Wallet,
+  List,
+  FileText,
 } from "lucide-react";
 
 function fmt(n: number): string {
@@ -158,13 +168,15 @@ function CostLine({ label, value, bold }: { label: string; value: string; bold?:
   );
 }
 
+const DEPOSIT_OPTIONS = [5, 10, 15, 20] as const;
+
 const DEFAULT_INPUTS: CalculatorInputs = {
   purchasePrice: 500000,
   state: "NSW",
   renovationCost: 50000,
   contingencyPercent: 10,
   expectedSalePrice: 700000,
-  loanLVR: 80,
+  depositPercent: 20,
   interestRate: 6.5,
   holdingPeriodMonths: 6,
   agentCommissionPercent: 2.0,
@@ -177,7 +189,18 @@ export default function Home() {
   const [results, setResults] = useState<CalculatorResults | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  const [renoMode, setRenoMode] = useState<"simple" | "detailed">("simple");
+  const [renoSections, setRenoSections] = useState<RenovationSection[]>(
+    () => JSON.parse(JSON.stringify(DEFAULT_SECTIONS))
+  );
+
   const selectedState = STATE_DATA.find((s) => s.code === inputs.state);
+
+  const depositAmount = Math.round(inputs.purchasePrice * (inputs.depositPercent / 100));
+  const loanAmount = inputs.purchasePrice - depositAmount;
+  const derivedLvr = inputs.purchasePrice > 0
+    ? Math.round((loanAmount / inputs.purchasePrice) * 100)
+    : 0;
 
   const update = useCallback(
     (field: keyof CalculatorInputs, value: number | string) => {
@@ -187,16 +210,22 @@ export default function Home() {
   );
 
   const handleCalculate = useCallback(() => {
-    const r = calculate(inputs);
+    const effectiveInputs = { ...inputs };
+    if (renoMode === "detailed") {
+      effectiveInputs.renovationCost = grandTotal(renoSections);
+    }
+    const r = calculate(effectiveInputs);
     setResults(r);
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
-  }, [inputs]);
+  }, [inputs, renoMode, renoSections]);
 
   const handleReset = useCallback(() => {
     setInputs({ ...DEFAULT_INPUTS });
     setResults(null);
+    setRenoMode("simple");
+    setRenoSections(JSON.parse(JSON.stringify(DEFAULT_SECTIONS)));
   }, []);
 
   return (
@@ -308,54 +337,127 @@ export default function Home() {
           {/* Renovation */}
           <div className="bg-surface-1 border border-edge rounded-2xl p-5 sm:p-6" style={{ boxShadow: "var(--card-shadow)" }}>
             <SectionHeader icon={<Hammer className="w-4.5 h-4.5" />}>Renovation Costs</SectionHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InputField
-                label="Renovation Budget"
-                value={inputs.renovationCost}
-                onChange={(v) => update("renovationCost", v)}
-                prefix="$"
-                step={5000}
-                min={0}
-                tooltip="Total renovation spend before contingency"
-              />
-              <InputField
-                label="Contingency Buffer"
-                value={inputs.contingencyPercent}
-                onChange={(v) => update("contingencyPercent", v)}
-                suffix="%"
-                step={1}
-                min={0}
-                max={50}
-                tooltip="Buffer for unexpected costs (10-15% recommended)"
-              />
+
+            {/* Mode Toggle */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setRenoMode("simple")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border ${
+                  renoMode === "simple"
+                    ? "bg-accent/10 text-accent border-accent/30"
+                    : "bg-surface-2/50 text-tx-muted border-edge hover:bg-surface-2"
+                }`}
+              >
+                <FileText className="w-3 h-3" />
+                Simple Budget
+              </button>
+              <button
+                onClick={() => setRenoMode("detailed")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border ${
+                  renoMode === "detailed"
+                    ? "bg-accent/10 text-accent border-accent/30"
+                    : "bg-surface-2/50 text-tx-muted border-edge hover:bg-surface-2"
+                }`}
+              >
+                <List className="w-3 h-3" />
+                Detailed Budget
+              </button>
             </div>
+
+            {renoMode === "simple" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InputField
+                  label="Renovation Budget"
+                  value={inputs.renovationCost}
+                  onChange={(v) => update("renovationCost", v)}
+                  prefix="$"
+                  step={5000}
+                  min={0}
+                  tooltip="Total renovation spend before contingency"
+                />
+                <InputField
+                  label="Contingency Buffer"
+                  value={inputs.contingencyPercent}
+                  onChange={(v) => update("contingencyPercent", v)}
+                  suffix="%"
+                  step={1}
+                  min={0}
+                  max={50}
+                  tooltip="Buffer for unexpected costs (10-15% recommended)"
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <RenovationBudget sections={renoSections} onChange={setRenoSections} />
+                <InputField
+                  label="Contingency Buffer"
+                  value={inputs.contingencyPercent}
+                  onChange={(v) => update("contingencyPercent", v)}
+                  suffix="%"
+                  step={1}
+                  min={0}
+                  max={50}
+                  tooltip="Buffer for unexpected costs (10-15% recommended)"
+                />
+              </div>
+            )}
           </div>
 
           {/* Financing */}
           <div className="bg-surface-1 border border-edge rounded-2xl p-5 sm:p-6" style={{ boxShadow: "var(--card-shadow)" }}>
             <SectionHeader icon={<Landmark className="w-4.5 h-4.5" />}>Financing</SectionHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InputField
-                label="Loan LVR"
-                value={inputs.loanLVR}
-                onChange={(v) => update("loanLVR", v)}
-                suffix="%"
-                step={5}
-                min={0}
-                max={95}
-                tooltip="Loan-to-Value Ratio — borrowing % of property value"
-              />
-              <InputField
-                label="Interest Rate"
-                value={inputs.interestRate}
-                onChange={(v) => update("interestRate", v)}
-                suffix="% p.a."
-                step={0.1}
-                min={0}
-                max={20}
-                tooltip="Annual interest rate on your loan"
-              />
+
+            {/* Deposit Buttons */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-tx-secondary flex items-center gap-1.5 mb-2">
+                <Wallet className="w-3.5 h-3.5 text-tx-muted" />
+                Deposit
+              </label>
+              <div className="flex gap-2">
+                {DEPOSIT_OPTIONS.map((pct) => (
+                  <button
+                    key={pct}
+                    onClick={() => update("depositPercent", pct)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold cursor-pointer border transition-all ${
+                      inputs.depositPercent === pct
+                        ? "bg-accent/15 text-accent border-accent/40 shadow-sm"
+                        : "bg-surface-2/50 text-tx-muted border-edge hover:bg-surface-2 hover:text-tx-secondary"
+                    }`}
+                  >
+                    {pct}%
+                  </button>
+                ))}
+              </div>
+              {/* Deposit / Loan summary */}
+              <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                <span className="text-tx-muted">
+                  Deposit: <strong className="text-tx-secondary font-mono">{fmt(depositAmount)}</strong>
+                </span>
+                <span className="text-tx-muted">
+                  Loan: <strong className="text-tx-secondary font-mono">{fmt(loanAmount)}</strong>
+                </span>
+                <span className="text-tx-muted">
+                  LVR: <strong className="text-tx-secondary font-mono">{derivedLvr}%</strong>
+                </span>
+                {derivedLvr > 80 && (
+                  <span className="text-amber-500 flex items-center gap-0.5">
+                    <Shield className="w-3 h-3 shrink-0" />
+                    LMI applies
+                  </span>
+                )}
+              </div>
             </div>
+
+            <InputField
+              label="Interest Rate"
+              value={inputs.interestRate}
+              onChange={(v) => update("interestRate", v)}
+              suffix="% p.a."
+              step={0.1}
+              min={0}
+              max={20}
+              tooltip="Annual interest rate on your loan"
+            />
           </div>
 
           {/* Selling Costs */}
@@ -465,11 +567,22 @@ export default function Home() {
                 <div className="space-y-2.5">
                   <CostLine label="Purchase Price" value={fmt(inputs.purchasePrice)} />
                   <CostLine label={`Stamp Duty (${inputs.state})`} value={fmt(results.stampDuty)} />
+                  {results.lmi > 0 && (
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-sm text-amber-500 flex items-center gap-1">
+                        <Shield className="w-3 h-3" />
+                        LMI (LVR {derivedLvr}%)
+                      </span>
+                      <span className="text-sm font-mono text-amber-500">
+                        {fmt(results.lmi)}
+                      </span>
+                    </div>
+                  )}
                   <CostLine label="Legal / Conveyancing" value={fmt(results.legalCostsBuy)} />
                   <div className="border-t border-edge pt-2.5 mt-2.5">
                     <CostLine
                       label="Total Buying"
-                      value={fmt(inputs.purchasePrice + results.stampDuty + results.legalCostsBuy)}
+                      value={fmt(inputs.purchasePrice + results.stampDuty + results.lmi + results.legalCostsBuy)}
                       bold
                     />
                   </div>
@@ -511,7 +624,12 @@ export default function Home() {
                     <CostLine label="Total Selling" value={fmt(results.totalSellingCosts)} bold />
                   </div>
                   <div className="border-t border-edge my-2.5" />
-                  <CostLine label="Loan Amount" value={fmt(results.loanAmount)} />
+                  <CostLine label={`Deposit (${inputs.depositPercent}%)`} value={fmt(results.deposit)} />
+                  <CostLine label="Base Loan" value={fmt(results.loanAmount)} />
+                  {results.lmi > 0 && (
+                    <CostLine label="+ LMI (capitalised)" value={fmt(results.lmi)} />
+                  )}
+                  <CostLine label="Effective Loan" value={fmt(results.effectiveLoan)} />
                   <CostLine label="Cash Invested" value={fmt(results.cashInvested)} />
                   <div className="border-t border-edge pt-2.5 mt-2.5">
                     <CostLine label="Total Project Cost" value={fmt(results.totalProjectCost)} bold />
