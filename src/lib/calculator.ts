@@ -49,12 +49,12 @@ const STAMP_DUTY_BRACKETS: Record<AustralianState, StampDutyBracket[]> = {
   // NSW: revenue.nsw.gov.au — standard transfer duty (from 1 Jul 2025, CPI-indexed annually)
   NSW: [
     { min: 0,       max: 17000,    base: 0,       rate: 1.25 },
-    { min: 17001,   max: 36000,    base: 213,     rate: 1.50 },
-    { min: 36001,   max: 97000,    base: 498,     rate: 1.75 },
-    { min: 97001,   max: 364000,   base: 1566,    rate: 3.50 },
-    { min: 364001,  max: 1212000,  base: 10914,   rate: 4.50 },
-    { min: 1212001, max: 3636000,  base: 49074,   rate: 5.50 },
-    { min: 3636001, max: Infinity, base: 182394,  rate: 7.00 },
+    { min: 17000,   max: 36000,    base: 213,     rate: 1.50 },
+    { min: 36000,   max: 97000,    base: 498,     rate: 1.75 },
+    { min: 97000,   max: 364000,   base: 1566,    rate: 3.50 },
+    { min: 364000,  max: 1212000,  base: 10914,   rate: 4.50 },
+    { min: 1212000, max: 3636000,  base: 49074,   rate: 5.50 },
+    { min: 3636000, max: Infinity, base: 182394,  rate: 7.00 },
   ],
 
   // VIC: sro.vic.gov.au — general (non-PPR) rates
@@ -62,50 +62,50 @@ const STAMP_DUTY_BRACKETS: Record<AustralianState, StampDutyBracket[]> = {
   // The marginal brackets below only apply up to $960,000.
   VIC: [
     { min: 0,       max: 25000,    base: 0,     rate: 1.40 },
-    { min: 25001,   max: 130000,   base: 350,   rate: 2.40 },
-    { min: 130001,  max: 960000,   base: 2870,  rate: 6.00 },
+    { min: 25000,   max: 130000,   base: 350,   rate: 2.40 },
+    { min: 130000,  max: 960000,   base: 2870,  rate: 6.00 },
   ],
 
   // QLD: qro.qld.gov.au — general transfer duty (verified via QRO example: $850k → $31,275)
   QLD: [
     { min: 0,       max: 5000,     base: 0,      rate: 0    },
-    { min: 5001,    max: 75000,    base: 0,      rate: 1.50 },
-    { min: 75001,   max: 540000,   base: 1050,   rate: 3.50 },
-    { min: 540001,  max: 1000000,  base: 17325,  rate: 4.50 },
-    { min: 1000001, max: Infinity, base: 38025,  rate: 5.75 },
+    { min: 5000,    max: 75000,    base: 0,      rate: 1.50 },
+    { min: 75000,   max: 540000,   base: 1050,   rate: 3.50 },
+    { min: 540000,  max: 1000000,  base: 17325,  rate: 4.50 },
+    { min: 1000000, max: Infinity, base: 38025,  rate: 5.75 },
   ],
 
   // SA: revenuesa.sa.gov.au — conveyance duty rates
   SA: [
     { min: 0,       max: 12000,    base: 0,      rate: 1.00 },
-    { min: 12001,   max: 30000,    base: 120,    rate: 2.00 },
-    { min: 30001,   max: 50000,    base: 480,    rate: 3.00 },
-    { min: 50001,   max: 100000,   base: 1080,   rate: 3.50 },
-    { min: 100001,  max: 200000,   base: 2830,   rate: 4.00 },
-    { min: 200001,  max: 250000,   base: 6830,   rate: 4.25 },
-    { min: 250001,  max: 300000,   base: 8955,   rate: 4.75 },
-    { min: 300001,  max: 500000,   base: 11330,  rate: 5.00 },
-    { min: 500001,  max: Infinity, base: 21330,  rate: 5.50 },
+    { min: 12000,   max: 30000,    base: 120,    rate: 2.00 },
+    { min: 30000,   max: 50000,    base: 480,    rate: 3.00 },
+    { min: 50000,   max: 100000,   base: 1080,   rate: 3.50 },
+    { min: 100000,  max: 200000,   base: 2830,   rate: 4.00 },
+    { min: 200000,  max: 250000,   base: 6830,   rate: 4.25 },
+    { min: 250000,  max: 300000,   base: 8955,   rate: 4.75 },
+    { min: 300000,  max: 500000,   base: 11330,  rate: 5.00 },
+    { min: 500000,  max: Infinity, base: 21330,  rate: 5.50 },
   ],
 
   // WA: wa.gov.au — transfer duty rates
   WA: [
     { min: 0,       max: 120000,   base: 0,      rate: 1.90 },
-    { min: 120001,  max: 150000,   base: 2280,   rate: 2.85 },
-    { min: 150001,  max: 360000,   base: 3135,   rate: 3.80 },
-    { min: 360001,  max: 725000,   base: 11115,  rate: 5.15 },
-    { min: 725001,  max: Infinity, base: 29910,  rate: 5.15 },
+    { min: 120000,  max: 150000,   base: 2280,   rate: 2.85 },
+    { min: 150000,  max: 360000,   base: 3135,   rate: 3.80 },
+    { min: 360000,  max: 725000,   base: 11115,  rate: 5.15 },
+    { min: 725000,  max: Infinity, base: 29910,  rate: 5.15 },
   ],
 
   // TAS: sro.tas.gov.au — property transfer duty (from 21 Oct 2013)
   TAS: [
     { min: 0,       max: 3000,     base: 50,     rate: 0    },
-    { min: 3001,    max: 25000,    base: 50,     rate: 1.75 },
-    { min: 25001,   max: 75000,    base: 435,    rate: 2.25 },
-    { min: 75001,   max: 200000,   base: 1560,   rate: 3.50 },
-    { min: 200001,  max: 375000,   base: 5935,   rate: 4.00 },
-    { min: 375001,  max: 725000,   base: 12935,  rate: 4.25 },
-    { min: 725001,  max: Infinity, base: 27810,  rate: 4.50 },
+    { min: 3000,    max: 25000,    base: 50,     rate: 1.75 },
+    { min: 25000,   max: 75000,    base: 435,    rate: 2.25 },
+    { min: 75000,   max: 200000,   base: 1560,   rate: 3.50 },
+    { min: 200000,  max: 375000,   base: 5935,   rate: 4.00 },
+    { min: 375000,  max: 725000,   base: 12935,  rate: 4.25 },
+    { min: 725000,  max: Infinity, base: 27810,  rate: 4.50 },
   ],
 
   // ACT: revenue.act.gov.au — conveyance duty (2025-26)
@@ -113,11 +113,11 @@ const STAMP_DUTY_BRACKETS: Record<AustralianState, StampDutyBracket[]> = {
   // The marginal brackets below only apply up to $1,455,000.
   ACT: [
     { min: 0,       max: 260000,   base: 0,      rate: 1.20 },
-    { min: 260001,  max: 300000,   base: 3120,   rate: 2.20 },
-    { min: 300001,  max: 500000,   base: 4000,   rate: 3.40 },
-    { min: 500001,  max: 750000,   base: 10800,  rate: 4.32 },
-    { min: 750001,  max: 1000000,  base: 21600,  rate: 5.90 },
-    { min: 1000001, max: 1455000,  base: 36350,  rate: 6.40 },
+    { min: 260000,  max: 300000,   base: 3120,   rate: 2.20 },
+    { min: 300000,  max: 500000,   base: 4000,   rate: 3.40 },
+    { min: 500000,  max: 750000,   base: 10800,  rate: 4.32 },
+    { min: 750000,  max: 1000000,  base: 21600,  rate: 5.90 },
+    { min: 1000000, max: 1455000,  base: 36350,  rate: 6.40 },
   ],
 
   // NT: treasury.nt.gov.au — handled entirely via formula in calculateStampDuty()
@@ -152,9 +152,15 @@ export function calculateStampDuty(price: number, state: AustralianState): numbe
   }
 
   // --- All other states: Standard marginal bracket calculation ---
+  // Brackets are ordered low→high; min is the "over" threshold.
+  // First bracket uses >=, subsequent brackets use > to avoid double-matching at boundaries.
   const brackets = STAMP_DUTY_BRACKETS[state];
-  for (const bracket of brackets) {
-    if (price >= bracket.min && price <= bracket.max) {
+  for (let i = 0; i < brackets.length; i++) {
+    const bracket = brackets[i];
+    const inRange = i === 0
+      ? price >= bracket.min && price <= bracket.max
+      : price > bracket.min && price <= bracket.max;
+    if (inRange) {
       const excess = price - bracket.min;
       const duty = bracket.base + (excess / 100) * bracket.rate;
       return Math.round(duty * 100) / 100;
@@ -164,26 +170,106 @@ export function calculateStampDuty(price: number, state: AustralianState): numbe
 }
 
 // ============================================================================
-// LMI (Lenders Mortgage Insurance) — Simplified V1 Estimates
-// LMI applies when LVR > 80%. Premium is a % of the base LOAN amount.
+// LMI (Lenders Mortgage Insurance) — Realistic 2D Rate Table
+// Based on Australian LMI insurer data (Helia/QBE indicative rates 2025-26).
+// Premium is a % of the base LOAN amount, varying by LVR band AND loan size.
 // LMI is capitalised (added to the loan), so interest accrues on it.
 //
-//   LVR 80%  → $0
-//   LVR 85%  → 1.0% of loan
-//   LVR 90%  → 2.0% of loan
-//   LVR 95%  → 3.5% of loan
+// Sources: yourmortgage.com.au, landsales.com.au, savings.com.au LMI guides
+// These are estimates — actual LMI varies by lender, insurer, and borrower profile.
 // ============================================================================
+
+interface LmiRateBand {
+  maxLoan: number;
+  rate: number; // as a decimal, e.g. 0.008 = 0.8%
+}
+
+// 2D lookup: LVR band → loan amount tiers → premium rate (% of loan)
+const LMI_RATES: { minLvr: number; maxLvr: number; bands: LmiRateBand[] }[] = [
+  {
+    minLvr: 80, maxLvr: 85,
+    bands: [
+      { maxLoan: 300000,   rate: 0.0070 },
+      { maxLoan: 500000,   rate: 0.0080 },
+      { maxLoan: 750000,   rate: 0.0092 },
+      { maxLoan: 1000000,  rate: 0.0098 },
+      { maxLoan: Infinity, rate: 0.0105 },
+    ],
+  },
+  {
+    minLvr: 85, maxLvr: 90,
+    bands: [
+      { maxLoan: 300000,   rate: 0.0165 },
+      { maxLoan: 500000,   rate: 0.0182 },
+      { maxLoan: 750000,   rate: 0.0205 },
+      { maxLoan: 1000000,  rate: 0.0220 },
+      { maxLoan: Infinity, rate: 0.0240 },
+    ],
+  },
+  {
+    minLvr: 90, maxLvr: 95,
+    bands: [
+      { maxLoan: 300000,   rate: 0.0360 },
+      { maxLoan: 500000,   rate: 0.0430 },
+      { maxLoan: 750000,   rate: 0.0465 },
+      { maxLoan: 1000000,  rate: 0.0500 },
+      { maxLoan: Infinity, rate: 0.0520 },
+    ],
+  },
+];
 
 export function calculateLMI(loanAmount: number, lvr: number): number {
   if (lvr <= 80 || loanAmount <= 0) return 0;
-  let rate = 0;
-  if (lvr <= 85) rate = 0.01;
-  else if (lvr <= 90) rate = 0.02;
-  else rate = 0.035;
+
+  // Find the matching LVR band
+  const lvrBand = LMI_RATES.find((b) => lvr > b.minLvr && lvr <= b.maxLvr);
+  if (!lvrBand) {
+    // LVR > 95% — use highest tier rate
+    const highest = LMI_RATES[LMI_RATES.length - 1];
+    const tier = highest.bands[highest.bands.length - 1];
+    return Math.round(loanAmount * tier.rate);
+  }
+
+  // Find the matching loan amount tier
+  const tier = lvrBand.bands.find((b) => loanAmount <= b.maxLoan);
+  const rate = tier ? tier.rate : lvrBand.bands[lvrBand.bands.length - 1].rate;
+
   return Math.round(loanAmount * rate);
 }
 
+// ============================================================================
+// Calculator Inputs & Results
+// ============================================================================
+
+export interface AdditionalCosts {
+  buildingAndPest: number;
+  settlementFee: number;
+  projectManagementFee: number;
+  siteDueDiligenceFee: number;
+  brokerageFee: number;
+  councilRates: number;
+  waterRates: number;
+  power: number;
+  insurance: number;
+}
+
+export interface SalesMarketingCosts {
+  settlementCosts: number;
+  stagingCosts: number;
+  photosAndListing: number;
+  agentCommissionPercent: number;
+  otherCosts: number;
+}
+
+export interface PrivateFunding {
+  enabled: boolean;
+  amount: number;
+  interestRate: number; // annual %
+  timeFrameMonths: number;
+}
+
 export interface CalculatorInputs {
+  propertyAddress: string;
   purchasePrice: number;
   state: AustralianState;
   renovationCost: number;
@@ -192,8 +278,9 @@ export interface CalculatorInputs {
   depositPercent: number;  // 5, 10, 15, or 20 — deposit as % of purchase price
   interestRate: number;   // annual percentage, e.g. 6.5
   holdingPeriodMonths: number;
-  agentCommissionPercent: number;
-  marketingCost: number;
+  additionalCosts: AdditionalCosts;
+  salesMarketing: SalesMarketingCosts;
+  privateFunding: PrivateFunding;
 }
 
 export interface CalculatorResults {
@@ -208,14 +295,27 @@ export interface CalculatorResults {
   effectiveLoan: number;    // loanAmount + LMI (interest accrues on this)
   monthlyInterest: number;
   totalInterestCost: number;
-  holdingCostsInsurance: number;
+  totalAdditionalCosts: number;
+  additionalCosts: AdditionalCosts;
+
+  // Holding costs (from additional costs, prorated over holding period)
   holdingCostsCouncilRates: number;
-  holdingCostsUtilities: number;
+  holdingCostsWaterRates: number;
+  holdingCostsPower: number;
+  holdingCostsInsurance: number;
   totalHoldingCosts: number;
+
+  // Sales & Marketing
   agentCommission: number;
-  marketingCost: number;
-  legalCostsSell: number;
+  settlementCosts: number;
+  stagingCosts: number;
+  photosAndListing: number;
+  otherSellingCosts: number;
   totalSellingCosts: number;
+
+  // Private Funding
+  privateFundingInterest: number;
+
   totalProjectCost: number;
 
   // Returns
@@ -253,8 +353,9 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     depositPercent,
     interestRate,
     holdingPeriodMonths,
-    agentCommissionPercent,
-    marketingCost,
+    additionalCosts: ac,
+    salesMarketing: sm,
+    privateFunding: pf,
   } = inputs;
 
   // --- DEPOSIT & LOAN ---
@@ -268,6 +369,18 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
   const effectiveLoan = loanAmount + lmi;                   // LMI capitalised
   const legalCostsBuy = 1500; // Estimated conveyancing/legal
 
+  // --- ADDITIONAL COSTS (one-off, at purchase) ---
+  const totalAdditionalCosts =
+    ac.buildingAndPest +
+    ac.settlementFee +
+    ac.projectManagementFee +
+    ac.siteDueDiligenceFee +
+    ac.brokerageFee +
+    ac.councilRates +
+    ac.waterRates +
+    ac.power +
+    ac.insurance;
+
   // --- RENOVATION COSTS ---
   const contingencyAmount = renovationCost * (contingencyPercent / 100);
   const totalRenovationCost = renovationCost + contingencyAmount;
@@ -278,31 +391,54 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
   const monthlyInterest = effectiveLoan * monthlyInterestRate;
   const totalInterestCost = monthlyInterest * holdingPeriodMonths;
 
-  // Estimated ongoing costs per month
-  const holdingCostsInsurance = 150 * holdingPeriodMonths;
-  const holdingCostsCouncilRates = 200 * holdingPeriodMonths;
-  const holdingCostsUtilities = 100 * holdingPeriodMonths;
+  // Holding costs from additional costs (these are total for the holding period)
+  const holdingCostsCouncilRates = ac.councilRates;
+  const holdingCostsWaterRates = ac.waterRates;
+  const holdingCostsPower = ac.power;
+  const holdingCostsInsurance = ac.insurance;
 
   const totalHoldingCosts =
     totalInterestCost +
-    holdingCostsInsurance +
     holdingCostsCouncilRates +
-    holdingCostsUtilities;
+    holdingCostsWaterRates +
+    holdingCostsPower +
+    holdingCostsInsurance;
 
-  // --- SELLING COSTS ---
-  const agentCommission = expectedSalePrice * (agentCommissionPercent / 100);
-  const legalCostsSell = 1200; // Estimated conveyancing/legal sell side
-  const totalSellingCosts = agentCommission + marketingCost + legalCostsSell;
+  // --- PRIVATE FUNDING ---
+  let privateFundingInterest = 0;
+  if (pf.enabled && pf.amount > 0) {
+    const pfMonthlyRate = pf.interestRate / 100 / 12;
+    privateFundingInterest = Math.round(pf.amount * pfMonthlyRate * pf.timeFrameMonths);
+  }
+
+  // --- SELLING / SALES & MARKETING ---
+  const agentCommission = expectedSalePrice * (sm.agentCommissionPercent / 100);
+  const settlementCosts = sm.settlementCosts;
+  const stagingCosts = sm.stagingCosts;
+  const photosAndListing = sm.photosAndListing;
+  const otherSellingCosts = sm.otherCosts;
+  const totalSellingCosts =
+    agentCommission + settlementCosts + stagingCosts + photosAndListing + otherSellingCosts;
 
   // --- TOTALS ---
+  // Additional costs items that are NOT already in holding costs
+  const additionalOneOff =
+    ac.buildingAndPest +
+    ac.settlementFee +
+    ac.projectManagementFee +
+    ac.siteDueDiligenceFee +
+    ac.brokerageFee;
+
   const totalProjectCost =
     purchasePrice +
     stampDuty +
     lmi +
     legalCostsBuy +
+    additionalOneOff +
     totalRenovationCost +
     totalHoldingCosts +
-    totalSellingCosts;
+    totalSellingCosts +
+    privateFundingInterest;
 
   const cashInvested = totalProjectCost - effectiveLoan;
 
@@ -337,18 +473,16 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
 
   // --- MAX OFFER PRICE ---
   // Target: 15% profit margin
-  // maxOffer = expectedSalePrice * 0.85 - allCostsExceptPurchase
   const targetProfitMargin = 0.15;
   const costsExPurchase =
     totalRenovationCost +
     totalHoldingCosts +
     totalSellingCosts +
     legalCostsBuy +
-    lmi;
+    lmi +
+    additionalOneOff +
+    privateFundingInterest;
 
-  // We need to account for stamp duty which depends on purchase price
-  // Approximate: maxOffer + stampDuty(maxOffer) + costsExPurchase = expectedSalePrice * (1 - targetProfitMargin)
-  // Iterative approach for accuracy
   let maxOffer = expectedSalePrice * (1 - targetProfitMargin) - costsExPurchase;
   for (let i = 0; i < 10; i++) {
     const sd = calculateStampDuty(Math.max(0, maxOffer), state);
@@ -368,10 +502,11 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
 
   const riskAnalysis: RiskRow[] = riskScenarios.map((s) => {
     const sp = Math.round(expectedSalePrice * s.priceMult);
-    const agComm = sp * (agentCommissionPercent / 100);
-    const sellCosts = agComm + marketingCost + legalCostsSell;
+    const agComm = sp * (sm.agentCommissionPercent / 100);
+    const sellCosts = agComm + settlementCosts + stagingCosts + photosAndListing + otherSellingCosts;
     const totalCost =
-      purchasePrice + stampDuty + lmi + legalCostsBuy + totalRenovationCost + totalHoldingCosts + sellCosts;
+      purchasePrice + stampDuty + lmi + legalCostsBuy + additionalOneOff +
+      totalRenovationCost + totalHoldingCosts + sellCosts + privateFundingInterest;
     const profit = sp - totalCost;
     const cash = totalCost - effectiveLoan;
     const r = cash > 0 ? (profit / cash) * 100 : 0;
@@ -397,14 +532,20 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     effectiveLoan,
     monthlyInterest,
     totalInterestCost,
-    holdingCostsInsurance,
+    totalAdditionalCosts,
+    additionalCosts: ac,
     holdingCostsCouncilRates,
-    holdingCostsUtilities,
+    holdingCostsWaterRates,
+    holdingCostsPower,
+    holdingCostsInsurance,
     totalHoldingCosts,
     agentCommission,
-    marketingCost,
-    legalCostsSell,
+    settlementCosts,
+    stagingCosts,
+    photosAndListing,
+    otherSellingCosts,
     totalSellingCosts,
+    privateFundingInterest,
     totalProjectCost,
     estimatedProfit,
     profitMargin,
