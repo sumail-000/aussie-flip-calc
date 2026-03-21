@@ -9,6 +9,7 @@ import {
   type AdditionalCosts,
   type SalesMarketingCosts,
   type PrivateFunding,
+  type PrivateFundingIncludes,
 } from "@/lib/calculator";
 import { useTheme } from "@/components/ThemeProvider";
 import RenovationBudget from "@/components/RenovationBudget";
@@ -273,7 +274,14 @@ const DEFAULT_SALES_MARKETING: SalesMarketingCosts = {
 
 const DEFAULT_PRIVATE_FUNDING: PrivateFunding = {
   enabled: false,
-  amount: 0,
+  includes: {
+    deposit: false,
+    stampDuty: false,
+    renovation: false,
+    additionalCosts: false,
+    interestCosts: false,
+    otherAmount: 0,
+  },
   interestRate: 10,
   timeFrameMonths: 6,
 };
@@ -407,7 +415,7 @@ async function generatePDF(inputs: CalculatorInputs, results: CalculatorResults)
   // Private Funding
   if (inputs.privateFunding.enabled && results.privateFundingInterest > 0) {
     addSection("Private Funding");
-    addLine("Private Loan Amount", fmt(inputs.privateFunding.amount));
+    addLine("Private Loan Amount", fmt(results.privateFundingAmount));
     addLine("Interest Rate", pct(inputs.privateFunding.interestRate));
     addLine("Term", `${inputs.privateFunding.timeFrameMonths} months`);
     addLine("Private Money Interest", fmt(results.privateFundingInterest), true);
@@ -528,6 +536,19 @@ export default function Home() {
       setInputs((prev) => ({
         ...prev,
         privateFunding: { ...prev.privateFunding, [field]: value },
+      }));
+    },
+    []
+  );
+
+  const updatePfIncludes = useCallback(
+    (field: keyof PrivateFundingIncludes, value: boolean | number) => {
+      setInputs((prev) => ({
+        ...prev,
+        privateFunding: {
+          ...prev.privateFunding,
+          includes: { ...prev.privateFunding.includes, [field]: value },
+        },
       }));
     },
     []
@@ -878,33 +899,72 @@ export default function Home() {
               </div>
 
               {inputs.privateFunding.enabled && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
-                  <InputField
-                    label="Private Funding Amount"
-                    value={inputs.privateFunding.amount}
-                    onChange={(v) => updatePrivateFunding("amount", v)}
-                    prefix="$"
-                    step={5000}
-                    min={0}
-                  />
-                  <InputField
-                    label="Interest Rate"
-                    value={inputs.privateFunding.interestRate}
-                    onChange={(v) => updatePrivateFunding("interestRate", v)}
-                    suffix="% p.a."
-                    step={0.5}
-                    min={0}
-                    max={30}
-                  />
-                  <InputField
-                    label="Time Frame"
-                    value={inputs.privateFunding.timeFrameMonths}
-                    onChange={(v) => updatePrivateFunding("timeFrameMonths", v)}
-                    suffix="months"
-                    step={1}
-                    min={1}
-                    max={60}
-                  />
+                <div className="animate-fade-in space-y-4">
+                  {/* Checkbox items to include */}
+                  <div>
+                    <p className="text-xs font-medium text-tx-muted uppercase tracking-wider mb-2">Include in Private Funding</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {([
+                        ["deposit", "Deposit", fmt(depositAmount)],
+                        ["stampDuty", "Stamp Duty", null],
+                        ["renovation", "Renovation", null],
+                        ["additionalCosts", "Additional Costs", null],
+                        ["interestCosts", "Interest Costs on Loan", null],
+                      ] as const).map(([key, label, hint]) => (
+                        <label
+                          key={key}
+                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-all ${
+                            inputs.privateFunding.includes[key]
+                              ? "bg-accent/10 border-accent/30 text-tx"
+                              : "bg-surface-2/30 border-edge text-tx-secondary hover:bg-surface-2/60"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={inputs.privateFunding.includes[key] as boolean}
+                            onChange={(e) => updatePfIncludes(key, e.target.checked)}
+                            className="w-4 h-4 rounded border-input-border accent-accent cursor-pointer"
+                          />
+                          <span className="text-sm font-medium flex-1">{label}</span>
+                          {hint && <span className="text-[11px] text-tx-muted font-mono">{hint}</span>}
+                        </label>
+                      ))}
+                    </div>
+                    {/* Other Amount */}
+                    <div className="mt-2">
+                      <InputField
+                        label="Other Amount"
+                        value={inputs.privateFunding.includes.otherAmount}
+                        onChange={(v) => updatePfIncludes("otherAmount", v)}
+                        prefix="$"
+                        step={1000}
+                        min={0}
+                        tooltip="Any other amount to include in private funding"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Interest rate & term */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InputField
+                      label="Private Loan Interest Rate"
+                      value={inputs.privateFunding.interestRate}
+                      onChange={(v) => updatePrivateFunding("interestRate", v)}
+                      suffix="% p.a."
+                      step={0.5}
+                      min={0}
+                      max={30}
+                    />
+                    <InputField
+                      label="Private Loan Term"
+                      value={inputs.privateFunding.timeFrameMonths}
+                      onChange={(v) => updatePrivateFunding("timeFrameMonths", v)}
+                      suffix="months"
+                      step={1}
+                      min={1}
+                      max={60}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -1182,7 +1242,8 @@ export default function Home() {
                           Private Funding
                         </span>
                       </div>
-                      <CostLine label={`Loan: ${fmt(inputs.privateFunding.amount)} @ ${pct(inputs.privateFunding.interestRate)}`} value="" />
+                      <CostLine label="Private Funding Amount" value={fmt(results.privateFundingAmount)} />
+                      <CostLine label={`Interest @ ${pct(inputs.privateFunding.interestRate)} for ${inputs.privateFunding.timeFrameMonths}mo`} value={fmt(results.privateFundingInterest)} />
                       <CostLine label="Private Money Interest" value={fmt(results.privateFundingInterest)} bold />
                     </>
                   )}

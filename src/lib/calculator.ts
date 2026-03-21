@@ -261,9 +261,18 @@ export interface SalesMarketingCosts {
   otherCosts: number;
 }
 
+export interface PrivateFundingIncludes {
+  deposit: boolean;
+  stampDuty: boolean;
+  renovation: boolean;
+  additionalCosts: boolean;
+  interestCosts: boolean;
+  otherAmount: number;
+}
+
 export interface PrivateFunding {
   enabled: boolean;
-  amount: number;
+  includes: PrivateFundingIncludes;
   interestRate: number; // annual %
   timeFrameMonths: number;
 }
@@ -314,6 +323,7 @@ export interface CalculatorResults {
   totalSellingCosts: number;
 
   // Private Funding
+  privateFundingAmount: number;
   privateFundingInterest: number;
 
   totalProjectCost: number;
@@ -405,10 +415,21 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     holdingCostsInsurance;
 
   // --- PRIVATE FUNDING ---
+  // Derive the private funding amount from the selected checkbox items
+  let privateFundingAmount = 0;
   let privateFundingInterest = 0;
-  if (pf.enabled && pf.amount > 0) {
-    const pfMonthlyRate = pf.interestRate / 100 / 12;
-    privateFundingInterest = Math.round(pf.amount * pfMonthlyRate * pf.timeFrameMonths);
+  if (pf.enabled) {
+    if (pf.includes.deposit) privateFundingAmount += deposit;
+    if (pf.includes.stampDuty) privateFundingAmount += stampDuty;
+    if (pf.includes.renovation) privateFundingAmount += totalRenovationCost;
+    if (pf.includes.additionalCosts) privateFundingAmount += totalAdditionalCosts;
+    if (pf.includes.interestCosts) privateFundingAmount += totalInterestCost;
+    privateFundingAmount += pf.includes.otherAmount;
+
+    if (privateFundingAmount > 0) {
+      const pfMonthlyRate = pf.interestRate / 100 / 12;
+      privateFundingInterest = Math.round(privateFundingAmount * pfMonthlyRate * pf.timeFrameMonths);
+    }
   }
 
   // --- SELLING / SALES & MARKETING ---
@@ -545,6 +566,7 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     photosAndListing,
     otherSellingCosts,
     totalSellingCosts,
+    privateFundingAmount,
     privateFundingInterest,
     totalProjectCost,
     estimatedProfit,
