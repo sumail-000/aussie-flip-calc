@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import {
   calculate,
+  calculateStampDuty,
+  calculateLMI,
   STATE_DATA,
   type CalculatorInputs,
   type CalculatorResults,
@@ -495,6 +497,7 @@ export default function Home() {
   const [emailTo, setEmailTo] = useState("");
   const [emailSending, setEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const selectedState = STATE_DATA.find((s) => s.code === inputs.state);
 
@@ -503,6 +506,32 @@ export default function Home() {
   const derivedLvr = inputs.purchasePrice > 0
     ? Math.round((loanAmount / inputs.purchasePrice) * 100)
     : 0;
+
+  // Pre-compute values for private funding checkbox hints
+  const stampDutyEstimate = calculateStampDuty(inputs.purchasePrice, inputs.state);
+
+  const additionalCostsTotal =
+    inputs.additionalCosts.buildingAndPest +
+    inputs.additionalCosts.settlementFee +
+    inputs.additionalCosts.projectManagementFee +
+    inputs.additionalCosts.siteDueDiligenceFee +
+    inputs.additionalCosts.brokerageFee +
+    inputs.additionalCosts.councilRates +
+    inputs.additionalCosts.waterRates +
+    inputs.additionalCosts.power +
+    inputs.additionalCosts.insurance;
+
+  const effectiveRenoCost = (() => {
+    const base = renoMode === "detailed" ? grandTotal(renoSections) : inputs.renovationCost;
+    return base + base * (inputs.contingencyPercent / 100);
+  })();
+
+  const interestCostEstimate = (() => {
+    const lmi = derivedLvr > 80 ? calculateLMI(loanAmount, derivedLvr) : 0;
+    const effectiveLoan = loanAmount + lmi;
+    const monthlyRate = inputs.interestRate / 100 / 12;
+    return Math.round(effectiveLoan * monthlyRate * inputs.holdingPeriodMonths);
+  })();
 
   const update = useCallback(
     (field: keyof CalculatorInputs, value: number | string) => {
@@ -573,20 +602,32 @@ export default function Home() {
     setRenoSections(JSON.parse(JSON.stringify(DEFAULT_SECTIONS)));
   }, []);
 
+  const getEffectiveResults = useCallback(() => {
+    const effectiveInputs = { ...inputs };
+    if (renoMode === "detailed") {
+      effectiveInputs.renovationCost = grandTotal(renoSections);
+    }
+    return calculate(effectiveInputs);
+  }, [inputs, renoMode, renoSections]);
+
   const handleDownloadPDF = useCallback(async () => {
-    if (!results) return;
-    const doc = await generatePDF(inputs, results);
+    const r = results ?? getEffectiveResults();
+    if (!results) setResults(r);
+    const doc = await generatePDF(inputs, r);
     const filename = inputs.propertyAddress
       ? `Flip-Report-${inputs.propertyAddress.split(",")[0].trim().replace(/\s+/g, "-")}.pdf`
       : "Flip-Report.pdf";
     doc.save(filename);
-  }, [inputs, results]);
+  }, [inputs, results, getEffectiveResults]);
 
   const handleEmailPDF = useCallback(async () => {
-    if (!results || !emailTo) return;
+    if (!emailTo) return;
+    const r = results ?? getEffectiveResults();
+    if (!results) setResults(r);
     setEmailSending(true);
+    setEmailError("");
     try {
-      const doc = await generatePDF(inputs, results);
+      const doc = await generatePDF(inputs, r);
       const pdfBase64 = doc.output("datauristring");
 
       const res = await fetch("/api/send-report", {
@@ -606,13 +647,15 @@ export default function Home() {
           setEmailSent(false);
           setEmailTo("");
         }, 2000);
+      } else {
+        setEmailError("Failed to send email. Please check SMTP configuration or download the PDF instead.");
       }
     } catch {
-      // silently fail — user can download instead
+      setEmailError("Failed to send email. Please check SMTP configuration or download the PDF instead.");
     } finally {
       setEmailSending(false);
     }
-  }, [inputs, results, emailTo]);
+  }, [inputs, results, emailTo, getEffectiveResults]);
 
   return (
     <div className="min-h-screen">
@@ -906,11 +949,11 @@ export default function Home() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {([
                         ["deposit", "Deposit", fmt(depositAmount)],
-                        ["stampDuty", "Stamp Duty", null],
-                        ["renovation", "Renovation", null],
-                        ["additionalCosts", "Additional Costs", null],
-                        ["interestCosts", "Interest Costs on Loan", null],
-                      ] as const).map(([key, label, hint]) => (
+                        ["stampDuty", "Stamp Duty", fmt(stampDutyEstimate)],
+                        ["renovation", "Renovation", fmt(effectiveRenoCost)],
+                        ["additionalCosts", "Additional Costs", fmt(additionalCostsTotal)],
+                        ["interestCosts", "Interest Costs on Loan", fmt(interestCostEstimate)],
+                      ] as [keyof Omit<PrivateFundingIncludes, "otherAmount">, string, string][]).map(([key, label, hint]) => (
                         <label
                           key={key}
                           className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-all ${
@@ -1036,24 +1079,20 @@ export default function Home() {
             <RotateCcw className="w-4 h-4" />
             Reset
           </button>
-          {results && (
-            <>
-              <button
-                onClick={handleDownloadPDF}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
-              >
-                <Download className="w-4 h-4" />
-                Download PDF
-              </button>
-              <button
-                onClick={() => setShowEmailModal(true)}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
-              >
-                <Mail className="w-4 h-4" />
-                Email Report
-              </button>
-            </>
-          )}
+          <button
+            onClick={handleDownloadPDF}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
+          >
+            <Download className="w-4 h-4" />
+            Download PDF
+          </button>
+          <button
+            onClick={() => setShowEmailModal(true)}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
+          >
+            <Mail className="w-4 h-4" />
+            Email Report
+          </button>
         </div>
 
         {/* ───── Email Modal ───── */}
@@ -1085,9 +1124,14 @@ export default function Home() {
                     <p><strong>Subject:</strong> New Property Deal - {inputs.propertyAddress || "Property"}</p>
                     <p className="mt-1">We have just completed a preliminary feasibility on {inputs.propertyAddress || "this property"}, please see the report for more details.</p>
                   </div>
+                  {emailError && (
+                    <div className="mb-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-500">
+                      {emailError}
+                    </div>
+                  )}
                   <div className="flex gap-3">
                     <button
-                      onClick={() => { setShowEmailModal(false); setEmailTo(""); }}
+                      onClick={() => { setShowEmailModal(false); setEmailTo(""); setEmailError(""); }}
                       className="flex-1 py-2.5 rounded-lg border border-edge text-tx-secondary font-medium text-sm cursor-pointer hover:bg-surface-2"
                     >
                       Cancel

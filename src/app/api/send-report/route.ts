@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Extract the base64 data from the data URI
-    const base64Data = pdfBase64.replace(/^data:application\/pdf;filename=.*?;base64,/, "");
+    // Extract the base64 data from the data URI (handles multiple formats)
+    const base64Data = pdfBase64.replace(/^data:application\/pdf[^,]*,/, "");
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",

@@ -31,6 +31,17 @@ export function createTask(name = ''): RenovationTask {
   return { id: uid(), name, cost: 0 };
 }
 
+export function createSubCategory(name = 'New SubCategory'): SubCategory {
+  return { id: uid(), name, tasks: [createTask()] };
+}
+
+const SECTION_COLORS = ['#8b5cf6', '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#6366f1'];
+
+export function createSection(name = 'New Section'): RenovationSection {
+  const colorIndex = Math.floor(Math.random() * SECTION_COLORS.length);
+  return { id: uid(), name, color: SECTION_COLORS[colorIndex], subCategories: [createSubCategory()] };
+}
+
 // ── Default renovation template ─────────────────────────────────────────────
 
 export const DEFAULT_SECTIONS: RenovationSection[] = [
