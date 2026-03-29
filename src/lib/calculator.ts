@@ -238,6 +238,45 @@ export function calculateLMI(loanAmount: number, lvr: number): number {
 }
 
 // ============================================================================
+// Registration Fees — Transfer & Mortgage (2025-26)
+// Sources: owlfinance.com.au/government-transfer-fees, state land registries
+// ============================================================================
+
+// Registration of Transfer: some states are flat fee, others % of property value
+const TRANSFER_REG_FEES: Record<AustralianState, { type: 'flat'; amount: number } | { type: 'percent'; rate: number }> = {
+  NSW: { type: 'flat', amount: 148 },
+  VIC: { type: 'percent', rate: 0.0025 },   // 0.25% of property value
+  QLD: { type: 'percent', rate: 0.0030 },   // 0.30% of property value
+  SA:  { type: 'percent', rate: 0.0090 },   // 0.90% of property value
+  WA:  { type: 'flat', amount: 272 },
+  TAS: { type: 'flat', amount: 217 },
+  ACT: { type: 'flat', amount: 446 },
+  NT:  { type: 'flat', amount: 152 },
+};
+
+// Registration of Mortgage: flat fees per state
+const MORTGAGE_REG_FEES: Record<AustralianState, number> = {
+  NSW: 164,
+  VIC: 126,  // PEXA rate
+  QLD: 224,
+  SA:  187,
+  WA:  203,
+  TAS: 152,
+  ACT: 166,
+  NT:  165,
+};
+
+export function calculateTransferRegistration(purchasePrice: number, state: AustralianState): number {
+  const rule = TRANSFER_REG_FEES[state];
+  if (rule.type === 'flat') return rule.amount;
+  return Math.round(purchasePrice * rule.rate);
+}
+
+export function calculateMortgageRegistration(state: AustralianState): number {
+  return MORTGAGE_REG_FEES[state];
+}
+
+// ============================================================================
 // Calculator Inputs & Results
 // ============================================================================
 
@@ -295,6 +334,8 @@ export interface CalculatorInputs {
 export interface CalculatorResults {
   // Costs
   stampDuty: number;
+  transferRegistration: number;
+  mortgageRegistration: number;
   lmi: number;
   legalCostsBuy: number;
   contingencyAmount: number;
@@ -375,6 +416,8 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
 
   // --- BUYING COSTS ---
   const stampDuty = calculateStampDuty(purchasePrice, state);
+  const transferRegistration = calculateTransferRegistration(purchasePrice, state);
+  const mortgageRegistration = calculateMortgageRegistration(state);
   const lmi = calculateLMI(loanAmount, lvr);               // LMI on base loan
   const effectiveLoan = loanAmount + lmi;                   // LMI capitalised
   const legalCostsBuy = 1500; // Estimated conveyancing/legal
@@ -453,6 +496,8 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
   const totalProjectCost =
     purchasePrice +
     stampDuty +
+    transferRegistration +
+    mortgageRegistration +
     lmi +
     legalCostsBuy +
     additionalOneOff +
@@ -544,6 +589,8 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
 
   return {
     stampDuty,
+    transferRegistration,
+    mortgageRegistration,
     lmi,
     legalCostsBuy,
     contingencyAmount,

@@ -13,7 +13,8 @@ import {
   type PrivateFunding,
   type PrivateFundingIncludes,
 } from "@/lib/calculator";
-import { useTheme } from "@/components/ThemeProvider";
+import { useAuth } from "@/components/AuthProvider";
+import ProGate from "@/components/ProGate";
 import RenovationBudget from "@/components/RenovationBudget";
 import {
   DEFAULT_SECTIONS,
@@ -51,6 +52,10 @@ import {
   HandCoins,
   ClipboardList,
   Megaphone,
+  Crown,
+  Lock,
+  Save,
+  Check,
 } from "lucide-react";
 
 function fmt(n: number): string {
@@ -378,6 +383,8 @@ async function generatePDF(inputs: CalculatorInputs, results: CalculatorResults)
   addSection("Buying Costs");
   addLine("Purchase Price", fmt(inputs.purchasePrice));
   addLine(`Stamp Duty (${inputs.state})`, fmt(results.stampDuty));
+  addLine("Registration of Transfer", fmt(results.transferRegistration));
+  addLine("Registration of Mortgage", fmt(results.mortgageRegistration));
   if (results.lmi > 0) addLine("LMI", fmt(results.lmi));
   addLine("Legal / Conveyancing", fmt(results.legalCostsBuy));
 
@@ -482,7 +489,7 @@ async function generatePDF(inputs: CalculatorInputs, results: CalculatorResults)
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function Home() {
-  const { theme, toggle } = useTheme();
+  const { user, isPro } = useAuth();
   const [inputs, setInputs] = useState<CalculatorInputs>({ ...DEFAULT_INPUTS });
   const [results, setResults] = useState<CalculatorResults | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -610,6 +617,33 @@ export default function Home() {
     return calculate(effectiveInputs);
   }, [inputs, renoMode, renoSections]);
 
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  const handleSaveProject = useCallback(async () => {
+    if (!user || !isPro) return;
+    setSaveStatus("saving");
+    const supabase = (await import("@/lib/supabase/client")).createClient();
+    const r = results ?? getEffectiveResults();
+    if (!results) setResults(r);
+
+    await supabase.from("saved_projects").insert({
+      user_id: user.id,
+      name: inputs.propertyAddress || "Untitled Project",
+      property_address: inputs.propertyAddress || null,
+      inputs: inputs as unknown as Record<string, unknown>,
+      results: r as unknown as Record<string, unknown>,
+      reno_mode: renoMode,
+      reno_sections: renoSections as unknown as Record<string, unknown>[],
+      purchase_price: inputs.purchasePrice,
+      sale_price: inputs.expectedSalePrice,
+      profit: r.estimatedProfit,
+      roi: r.roi,
+      deal_rating: r.dealRating,
+    });
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus("idle"), 2000);
+  }, [user, isPro, inputs, results, renoMode, renoSections, getEffectiveResults]);
+
   const handleDownloadPDF = useCallback(async () => {
     const r = results ?? getEffectiveResults();
     if (!results) setResults(r);
@@ -659,45 +693,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* ───── Header ───── */}
-      <header
-        className="border-b border-edge sticky top-0 z-50 backdrop-blur-md"
-        style={{ background: "color-mix(in srgb, var(--surface-1) 85%, transparent)" }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white">
-              <Calculator className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-tx leading-tight tracking-tight">
-                Aussie Flip Calc
-              </h1>
-              <p className="text-[11px] text-tx-muted hidden sm:block">
-                Property Renovation Calculator
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggle}
-              className="w-9 h-9 flex items-center justify-center rounded-lg border border-edge hover:bg-surface-2 cursor-pointer"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-tx-secondary" />
-              ) : (
-                <Moon className="w-4 h-4 text-tx-secondary" />
-              )}
-            </button>
-            <span className="text-[11px] px-2 py-0.5 rounded-md bg-accent/10 text-accent font-semibold tracking-wide border border-accent/20">
-              v2.0
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {/* ───── Input Cards ───── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
           {/* Property Details */}
@@ -787,15 +783,19 @@ export default function Home() {
                 Simple Budget
               </button>
               <button
-                onClick={() => setRenoMode("detailed")}
+                onClick={() => {
+                  if (!isPro) return; // ProGate will show overlay
+                  setRenoMode("detailed");
+                }}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border ${
                   renoMode === "detailed"
                     ? "bg-accent/10 text-accent border-accent/30"
                     : "bg-surface-2/50 text-tx-muted border-edge hover:bg-surface-2"
-                }`}
+                } ${!isPro ? "opacity-60" : ""}`}
               >
                 <List className="w-3 h-3" />
                 Detailed Budget
+                {!isPro && <Crown className="w-3 h-3 text-amber-500 ml-0.5" />}
               </button>
             </div>
 
@@ -1065,13 +1065,23 @@ export default function Home() {
 
         {/* ───── Action Buttons ───── */}
         <div className="flex flex-col sm:flex-row gap-3 mb-10">
-          <button
-            onClick={handleCalculate}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] cursor-pointer text-sm"
-          >
-            <Calculator className="w-4 h-4" />
-            Calculate Flip Profit
-          </button>
+          {user ? (
+            <button
+              onClick={handleCalculate}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] cursor-pointer text-sm"
+            >
+              <Calculator className="w-4 h-4" />
+              Calculate Flip Profit
+            </button>
+          ) : (
+            <a
+              href="/signup"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] cursor-pointer text-sm"
+            >
+              <Lock className="w-4 h-4" />
+              Sign Up Free to Calculate
+            </a>
+          )}
           <button
             onClick={handleReset}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
@@ -1079,20 +1089,68 @@ export default function Home() {
             <RotateCcw className="w-4 h-4" />
             Reset
           </button>
-          <button
-            onClick={handleDownloadPDF}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
-          >
-            <Download className="w-4 h-4" />
-            Download PDF
-          </button>
-          <button
-            onClick={() => setShowEmailModal(true)}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
-          >
-            <Mail className="w-4 h-4" />
-            Email Report
-          </button>
+          {isPro ? (
+            <>
+              <button
+                onClick={handleDownloadPDF}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </button>
+              <button
+                onClick={() => setShowEmailModal(true)}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm"
+              >
+                <Mail className="w-4 h-4" />
+                Email Report
+              </button>
+              <button
+                onClick={handleSaveProject}
+                disabled={saveStatus === "saving"}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary font-medium rounded-xl border border-edge cursor-pointer text-sm disabled:opacity-50"
+              >
+                {saveStatus === "saving" ? (
+                  <div className="w-4 h-4 border-2 border-tx-muted/30 border-t-tx-muted rounded-full animate-spin" />
+                ) : saveStatus === "saved" ? (
+                  <Check className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {saveStatus === "saved" ? "Saved!" : "Save Project"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                disabled
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2/50 text-tx-muted font-medium rounded-xl border border-edge text-sm opacity-60 cursor-not-allowed"
+                title="Pro feature"
+              >
+                <Lock className="w-4 h-4" />
+                Download PDF
+                <Crown className="w-3 h-3 text-amber-500" />
+              </button>
+              <button
+                disabled
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2/50 text-tx-muted font-medium rounded-xl border border-edge text-sm opacity-60 cursor-not-allowed"
+                title="Pro feature"
+              >
+                <Lock className="w-4 h-4" />
+                Email Report
+                <Crown className="w-3 h-3 text-amber-500" />
+              </button>
+              <button
+                disabled
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2/50 text-tx-muted font-medium rounded-xl border border-edge text-sm opacity-60 cursor-not-allowed"
+                title="Pro feature"
+              >
+                <Lock className="w-4 h-4" />
+                Save Project
+                <Crown className="w-3 h-3 text-amber-500" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* ───── Email Modal ───── */}
@@ -1212,6 +1270,8 @@ export default function Home() {
                 <div className="space-y-2.5">
                   <CostLine label="Purchase Price" value={fmt(inputs.purchasePrice)} />
                   <CostLine label={`Stamp Duty (${inputs.state})`} value={fmt(results.stampDuty)} />
+                  <CostLine label="Registration of Transfer" value={fmt(results.transferRegistration)} />
+                  <CostLine label="Registration of Mortgage" value={fmt(results.mortgageRegistration)} />
                   {results.lmi > 0 && (
                     <div className="flex justify-between items-center py-0.5">
                       <span className="text-sm text-amber-500 flex items-center gap-1">
@@ -1246,7 +1306,7 @@ export default function Home() {
                   <div className="border-t border-edge pt-2.5 mt-2.5">
                     <CostLine
                       label="Total Buying"
-                      value={fmt(inputs.purchasePrice + results.stampDuty + results.lmi + results.legalCostsBuy + results.totalAdditionalCosts - results.holdingCostsCouncilRates - results.holdingCostsWaterRates - results.holdingCostsPower - results.holdingCostsInsurance)}
+                      value={fmt(inputs.purchasePrice + results.stampDuty + results.transferRegistration + results.mortgageRegistration + results.lmi + results.legalCostsBuy + results.totalAdditionalCosts - results.holdingCostsCouncilRates - results.holdingCostsWaterRates - results.holdingCostsPower - results.holdingCostsInsurance)}
                       bold
                     />
                   </div>
@@ -1390,7 +1450,7 @@ export default function Home() {
             </div>
           </div>
         )}
-      </main>
+      </div>
 
       {/* ───── Footer ───── */}
       <footer className="border-t border-edge py-8">
