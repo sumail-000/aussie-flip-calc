@@ -51,6 +51,14 @@ export default function Header() {
             </Link>
             {user && (
               <Link
+                href="/workspace"
+                className="px-3 py-1.5 text-sm font-medium text-tx-secondary hover:text-tx hover:bg-surface-2 rounded-lg transition-colors"
+              >
+                Workspace
+              </Link>
+            )}
+            {user && (
+              <Link
                 href="/projects"
                 className="px-3 py-1.5 text-sm font-medium text-tx-secondary hover:text-tx hover:bg-surface-2 rounded-lg transition-colors"
               >
@@ -220,6 +228,15 @@ export default function Header() {
           >
             Calculator
           </Link>
+          {user && (
+            <Link
+              href="/workspace"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2 text-sm font-medium text-tx-secondary hover:text-tx hover:bg-surface-2 rounded-lg"
+            >
+              Workspace
+            </Link>
+          )}
           {user && (
             <Link
               href="/projects"

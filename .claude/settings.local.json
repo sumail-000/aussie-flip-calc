@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.yourmortgage.com.au)",
+      "WebFetch(domain:www.helia.com.au)",
+      "WebFetch(domain:www.savings.com.au)",
+      "WebFetch(domain:www.mortgagecalculator.com.au)",
+      "WebFetch(domain:www.homeloanexperts.com.au)",
+      "WebSearch",
+      "WebFetch(domain:www.money.com.au)",
+      "WebFetch(domain:www.qbe.com)",
+      "WebFetch(domain:www.canstar.com.au)",
+      "WebFetch(domain:www.landsales.com.au)",
+      "Bash(npx next:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": true
+}

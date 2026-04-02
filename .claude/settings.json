@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e//**)",
+      "Bash(xargs wc:*)",
+      "Bash(find \"/e/australian calculator/aussie-flip-calc/src\" -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec wc -l {} +)",
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:www.commbank.com.au)",
+      "WebFetch(domain:casaconveyancing.com.au)",
+      "WebFetch(domain:www.land.vic.gov.au)",
+      "WebFetch(domain:www.conveyancingdepot.com.au)",
+      "WebFetch(domain:entryconveyancing.com.au)",
+      "WebFetch(domain:nswlrs.com.au)",
+      "WebFetch(domain:rg-guidelines.nswlrs.com.au)",
+      "WebFetch(domain:www.pexa.com.au)",
+      "WebFetch(domain:www.unloan.com.au)",
+      "WebFetch(domain:www.owlfinance.com.au)",
+      "WebFetch(domain:landservices.com.au)",
+      "mcp__plugin_supabase_supabase__list_projects",
+      "mcp__plugin_supabase_supabase__get_project_url",
+      "mcp__plugin_supabase_supabase__get_publishable_keys",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "Bash(npm install:*)",
+      "Bash(node -e \"const Stripe = require\\(''stripe''\\); console.log\\(Stripe.Stripe.LATEST_API_VERSION || ''check package''\\)\")"
+    ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "sentry@claude-plugins-official": true,
+    "stripe@claude-plugins-official": true,
+    "supabase@claude-plugins-official": true
+  }
+}

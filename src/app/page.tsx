@@ -626,7 +626,7 @@ export default function Home() {
     const r = results ?? getEffectiveResults();
     if (!results) setResults(r);
 
-    await supabase.from("saved_projects").insert({
+    const { data: savedProject } = await supabase.from("saved_projects").insert({
       user_id: user.id,
       name: inputs.propertyAddress || "Untitled Project",
       property_address: inputs.propertyAddress || null,
@@ -639,7 +639,21 @@ export default function Home() {
       profit: r.estimatedProfit,
       roi: r.roi,
       deal_rating: r.dealRating,
-    });
+    }).select("id").single();
+
+    // Auto-create a workspace board from renovation data
+    if (savedProject && renoSections.length > 0) {
+      await fetch("/api/boards/create-from-project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: savedProject.id,
+          projectName: inputs.propertyAddress || "Untitled Board",
+          renoSections,
+        }),
+      });
+    }
+
     setSaveStatus("saved");
     setTimeout(() => setSaveStatus("idle"), 2000);
   }, [user, isPro, inputs, results, renoMode, renoSections, getEffectiveResults]);
