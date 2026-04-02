@@ -53,15 +53,15 @@ function StatusCell({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full px-2 py-1 rounded text-xs font-semibold text-center cursor-pointer transition-colors"
-        style={{ background: cfg.bg, color: cfg.color }}
+        className="w-full py-1.5 rounded-[4px] text-[11px] font-bold text-center cursor-pointer transition-opacity hover:opacity-85 text-white"
+        style={{ background: cfg.color }}
       >
         {cfg.label}
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-50 bg-surface-1 border border-edge rounded-lg shadow-xl overflow-hidden min-w-[140px]">
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-surface-1 border border-edge rounded-xl shadow-2xl overflow-hidden min-w-[150px] p-1.5">
             {(Object.entries(STATUS_CONFIG) as [ItemStatus, typeof cfg][]).map(
               ([key, c]) => (
                 <button
@@ -70,8 +70,8 @@ function StatusCell({
                     onChange(key);
                     setOpen(false);
                   }}
-                  className="w-full px-3 py-2 text-xs font-semibold text-left hover:opacity-80 cursor-pointer transition-opacity"
-                  style={{ background: c.bg, color: c.color }}
+                  className="w-full py-2 rounded-lg text-[11px] font-bold text-center cursor-pointer text-white mb-1 last:mb-0 hover:opacity-85 transition-opacity"
+                  style={{ background: c.color }}
                 >
                   {c.label}
                 </button>
@@ -93,19 +93,22 @@ function PriorityCell({
 }) {
   const [open, setOpen] = useState(false);
   const cfg = PRIORITY_CONFIG[value];
+  const hasValue = value !== "";
   return (
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full px-2 py-1 rounded text-xs font-semibold text-center cursor-pointer transition-colors min-h-[26px]"
-        style={{ background: cfg.bg, color: cfg.color }}
+        className={`w-full py-1.5 rounded-[4px] text-[11px] font-bold text-center cursor-pointer transition-opacity hover:opacity-85 ${
+          hasValue ? "text-white" : "text-tx-muted bg-surface-2/50"
+        }`}
+        style={hasValue ? { background: cfg.color } : undefined}
       >
         {cfg.label || "—"}
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-50 bg-surface-1 border border-edge rounded-lg shadow-xl overflow-hidden min-w-[120px]">
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-surface-1 border border-edge rounded-xl shadow-2xl overflow-hidden min-w-[130px] p-1.5">
             {(
               Object.entries(PRIORITY_CONFIG) as [ItemPriority, typeof cfg][]
             ).map(([key, c]) => (
@@ -115,8 +118,10 @@ function PriorityCell({
                   onChange(key);
                   setOpen(false);
                 }}
-                className="w-full px-3 py-2 text-xs font-semibold text-left hover:opacity-80 cursor-pointer transition-opacity"
-                style={{ background: c.bg, color: c.color }}
+                className={`w-full py-2 rounded-lg text-[11px] font-bold text-center cursor-pointer mb-1 last:mb-0 hover:opacity-85 transition-opacity ${
+                  key === "" ? "text-tx-muted bg-surface-2/50" : "text-white"
+                }`}
+                style={key !== "" ? { background: c.color } : undefined}
               >
                 {c.label || "(none)"}
               </button>
@@ -259,6 +264,68 @@ function BudgetCell({
   );
 }
 
+function TimelineCell({
+  start,
+  end,
+  color,
+  onChangeStart,
+  onChangeEnd,
+}: {
+  start: string | null;
+  end: string | null;
+  color: string;
+  onChangeStart: (v: string | null) => void;
+  onChangeEnd: (v: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-1">
+        <input
+          type="date"
+          value={start || ""}
+          onChange={(e) => onChangeStart(e.target.value || null)}
+          className="bg-input-bg border border-input-border rounded px-1 py-0.5 text-[10px] text-tx focus:outline-none focus:ring-1 focus:ring-accent/40"
+        />
+        <input
+          type="date"
+          value={end || ""}
+          onChange={(e) => onChangeEnd(e.target.value || null)}
+          onBlur={() => setEditing(false)}
+          className="bg-input-bg border border-input-border rounded px-1 py-0.5 text-[10px] text-tx focus:outline-none focus:ring-1 focus:ring-accent/40"
+        />
+      </div>
+    );
+  }
+
+  if (!start && !end) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className="w-full text-center text-tx-muted/40 text-[10px] cursor-pointer hover:text-tx-muted py-1"
+      >
+        —
+      </button>
+    );
+  }
+
+  const fmt = (d: string) => {
+    const dt = new Date(d + "T00:00:00");
+    return dt.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+  };
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className="w-full rounded-full py-1 px-2 text-[10px] font-semibold text-white text-center cursor-pointer hover:opacity-85 transition-opacity"
+      style={{ background: `linear-gradient(90deg, ${color}, ${color}aa)` }}
+    >
+      {start ? fmt(start) : "?"} - {end ? fmt(end) : "?"}
+    </button>
+  );
+}
+
 // ── Subitem Row ───────────────────────────────────────────────────────────
 
 function SubitemRow({
@@ -275,11 +342,11 @@ function SubitemRow({
   return (
     <tr className="group/sub hover:bg-surface-2/30 transition-colors border-b border-edge/20">
       <td
-        className="pl-12 pr-2 py-1.5"
-        style={{ borderLeft: `3px solid ${groupColor}30` }}
+        className="pl-10 pr-2 py-1.5"
+        style={{ borderLeft: `3px solid ${groupColor}25` }}
       >
         <div className="flex items-center gap-1.5">
-          <div className="w-1 h-1 rounded-full bg-tx-muted/30 shrink-0" />
+          <div className="w-1.5 h-[1px] bg-tx-muted/20 shrink-0" />
           <EditableText
             value={sub.name}
             onChange={(v) => onUpdate("name", v)}
@@ -308,16 +375,15 @@ function SubitemRow({
           onChange={(v) => onUpdate("due_date", v)}
         />
       </td>
-      {/* Empty cells for Priority, Notes, Timeline */}
-      <td />
-      <td />
+      <td className="px-2 py-1.5 w-[100px]" />
+      <td className="px-2 py-1.5 w-[120px]" />
       <td className="px-2 py-1.5 w-[90px]">
         <BudgetCell
           value={sub.budget}
           onChange={(v) => onUpdate("budget", v)}
         />
       </td>
-      <td />
+      <td className="px-2 py-1.5 w-[140px]" />
       <td className="px-2 py-1 w-8">
         <button
           onClick={onDelete}
@@ -474,21 +540,13 @@ function ItemRow({
           />
         </td>
         <td className="px-2 py-2 w-[140px]">
-          <div className="flex items-center gap-1">
-            <input
-              type="date"
-              value={item.timeline_start || ""}
-              onChange={(e) => updateItem("timeline_start", e.target.value || null)}
-              className="w-1/2 bg-transparent text-[10px] text-tx-muted focus:outline-none cursor-pointer"
-            />
-            <span className="text-tx-muted/40 text-[10px]">→</span>
-            <input
-              type="date"
-              value={item.timeline_end || ""}
-              onChange={(e) => updateItem("timeline_end", e.target.value || null)}
-              className="w-1/2 bg-transparent text-[10px] text-tx-muted focus:outline-none cursor-pointer"
-            />
-          </div>
+          <TimelineCell
+            start={item.timeline_start}
+            end={item.timeline_end}
+            color={groupColor}
+            onChangeStart={(v) => updateItem("timeline_start", v)}
+            onChangeEnd={(v) => updateItem("timeline_end", v)}
+          />
         </td>
         <td className="px-2 py-1 w-8">
           <div className="flex gap-0.5">
@@ -509,6 +567,24 @@ function ItemRow({
           </div>
         </td>
       </tr>
+      {/* Subitem header */}
+      {expanded && subs.length > 0 && (
+        <tr>
+          <td colSpan={9} style={{ borderLeft: `3px solid ${groupColor}15` }}>
+            <div className="flex items-center text-[10px] font-semibold text-tx-muted/60 uppercase tracking-wider pl-10 pr-2 pt-2 pb-1">
+              <span className="flex-1">Subitem</span>
+              <span className="w-[90px] px-2">Owner</span>
+              <span className="w-[120px] px-2">Status</span>
+              <span className="w-[100px] px-2">Date</span>
+              <span className="w-[100px] px-2"></span>
+              <span className="w-[120px] px-2"></span>
+              <span className="w-[90px] px-2 text-right">Budget</span>
+              <span className="w-[140px] px-2"></span>
+              <span className="w-8"></span>
+            </div>
+          </td>
+        </tr>
+      )}
       {/* Subitems */}
       {expanded &&
         subs.map((sub) => (
@@ -524,8 +600,8 @@ function ItemRow({
         <tr>
           <td
             colSpan={9}
-            className="pl-12 py-1"
-            style={{ borderLeft: `3px solid ${groupColor}20` }}
+            className="pl-10 py-1.5 pb-2"
+            style={{ borderLeft: `3px solid ${groupColor}15` }}
           >
             <button
               onClick={addSubitem}
