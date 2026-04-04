@@ -103,9 +103,9 @@ export default function Sidebar() {
           Calculator
         </Link>
 
-        {user && (
+        {false && user && (
           <>
-            {/* Workspace section */}
+            {/* Workspace section — dev only */}
             <div className="mt-3">
               <button
                 onClick={() => setWsExpanded(!wsExpanded)}
@@ -155,7 +155,7 @@ export default function Sidebar() {
           </>
         )}
 
-        {!isPro && user && (
+        {false && !isPro && user && (
           <Link
             href="/pricing"
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-amber-500 hover:bg-amber-500/10 transition-colors"
