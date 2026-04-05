@@ -33,9 +33,9 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <div className="flex min-h-screen">
-              <Sidebar />
-              <main className="flex-1 overflow-x-hidden">{children}</main>
+            <Sidebar />
+            <div className="md:pl-56 min-h-screen">
+              <main className="min-h-screen">{children}</main>
             </div>
           </AuthProvider>
         </ThemeProvider>

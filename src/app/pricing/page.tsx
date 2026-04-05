@@ -49,7 +49,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] px-4 py-12">
+    <div className="min-h-[calc(100vh-3.5rem)] px-3 sm:px-4 py-8 sm:py-12">
       <div className="max-w-4xl mx-auto">
         <Link
           href="/"

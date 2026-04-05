@@ -692,13 +692,13 @@ function GroupSection({
               }
             }}
             autoFocus
-            className="text-lg font-bold bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-accent/40 rounded px-1"
+            className="text-base sm:text-lg font-bold bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-accent/40 rounded px-1"
             style={{ color: group.color }}
           />
         ) : (
           <span
             onClick={() => setEditingName(true)}
-            className="text-lg font-bold cursor-text"
+            className="text-base sm:text-lg font-bold cursor-text"
             style={{ color: group.color }}
           >
             {group.name}
@@ -717,8 +717,8 @@ function GroupSection({
       </div>
 
       {!collapsed && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr
                 className="text-[11px] text-white uppercase tracking-wider"
@@ -818,7 +818,7 @@ function ActivityPanel({
   if (!open) return null;
 
   return (
-    <div className="fixed right-0 top-14 bottom-0 w-80 bg-surface-1 border-l border-edge shadow-xl z-30 overflow-y-auto">
+    <div className="fixed right-0 top-12 sm:top-14 bottom-0 w-full sm:w-80 bg-surface-1 border-l border-edge shadow-xl z-30 overflow-y-auto">
       <div className="flex items-center justify-between px-4 py-3 border-b border-edge sticky top-0 bg-surface-1">
         <h3 className="text-sm font-bold text-tx">Activity Log</h3>
         <button
@@ -976,19 +976,19 @@ export default function BoardPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] px-4 sm:px-6 py-6">
+    <div className="min-h-[calc(100vh-3.5rem)] px-3 sm:px-6 py-4 sm:py-6">
       {/* Board header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href="/workspace"
-            className="p-1.5 rounded-lg hover:bg-surface-2 text-tx-muted hover:text-tx transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface-2 text-tx-muted hover:text-tx transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="flex items-center gap-2">
-            <LayoutGrid className="w-5 h-5 text-accent" />
-            <h1 className="text-xl font-bold text-tx">{boardName}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <LayoutGrid className="w-5 h-5 text-accent shrink-0 hidden sm:block" />
+            <h1 className="text-base sm:text-xl font-bold text-tx truncate">{boardName}</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">

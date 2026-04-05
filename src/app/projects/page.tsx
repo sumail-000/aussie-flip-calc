@@ -92,7 +92,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] px-4 py-8 max-w-5xl mx-auto">
+    <div className="min-h-[calc(100vh-3.5rem)] px-3 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto">
       <Link
         href="/"
         className="inline-flex items-center gap-1.5 text-xs text-tx-muted hover:text-tx mb-6 transition-colors"

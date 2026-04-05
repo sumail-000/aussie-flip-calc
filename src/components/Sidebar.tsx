@@ -261,7 +261,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 shrink-0 border-r border-edge bg-surface-1 flex-col h-screen sticky top-0 overflow-hidden">
+      <aside className="hidden md:flex w-56 fixed left-0 top-0 bottom-0 border-r border-edge bg-surface-1 flex-col h-screen z-40 overflow-hidden">
         {sidebarContent}
       </aside>
 

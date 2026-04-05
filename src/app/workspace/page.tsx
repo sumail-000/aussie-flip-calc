@@ -62,7 +62,7 @@ export default function WorkspacePage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] px-4 py-8 max-w-5xl mx-auto">
+    <div className="min-h-[calc(100vh-3.5rem)] px-3 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-tx flex items-center gap-2">

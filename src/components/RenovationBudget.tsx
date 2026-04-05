@@ -235,7 +235,7 @@ export default function RenovationBudget({ sections, onChange }: Props) {
           <div key={section.id} className="rounded-xl border border-edge overflow-hidden">
             {/* Section Header */}
             <div
-              className="flex items-center gap-3 px-4 py-3 bg-surface-2/60 hover:bg-surface-2"
+              className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-surface-2/60 hover:bg-surface-2"
               style={{ borderLeft: `4px solid ${section.color}` }}
             >
               <button
@@ -489,7 +489,7 @@ function SubCategoryRow({
       {/* Tasks */}
       {isExpanded && (
         <div
-          className="bg-surface-2/20 px-5 pb-3 pt-1"
+          className="bg-surface-2/20 px-3 sm:px-5 pb-3 pt-1"
           style={{ borderLeft: `4px solid ${sectionColor}25` }}
         >
           {/* Table header */}
@@ -497,7 +497,7 @@ function SubCategoryRow({
             <span className="flex-1 text-[11px] font-semibold text-tx-muted uppercase tracking-wider pl-1">
               Item
             </span>
-            <span className="w-28 text-[11px] font-semibold text-tx-muted uppercase tracking-wider text-right">
+            <span className="w-20 sm:w-28 text-[11px] font-semibold text-tx-muted uppercase tracking-wider text-right">
               Budget
             </span>
             <span className="w-8" />
@@ -516,7 +516,7 @@ function SubCategoryRow({
                 placeholder="Task name..."
                 className="flex-1 bg-transparent border-none text-sm text-tx placeholder:text-tx-muted/50 focus:outline-none py-1 pl-1"
               />
-              <div className="relative w-28">
+              <div className="relative w-20 sm:w-28">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-tx-muted text-xs pointer-events-none">
                   $
                 </span>

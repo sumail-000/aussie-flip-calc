@@ -110,7 +110,7 @@ export default function ProjectDetailPage() {
   const gs = (key: string): string => (typeof r[key] === "string" ? (r[key] as string) : "");
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] px-4 py-8 max-w-4xl mx-auto">
+    <div className="min-h-[calc(100vh-3.5rem)] px-3 sm:px-4 py-4 sm:py-8 max-w-4xl mx-auto">
       <Link
         href="/projects"
         className="inline-flex items-center gap-1.5 text-xs text-tx-muted hover:text-tx mb-6 transition-colors"

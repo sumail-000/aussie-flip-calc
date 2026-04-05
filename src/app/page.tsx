@@ -707,7 +707,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24">
         {/* ───── Input Cards ───── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
           {/* Property Details */}
@@ -1078,11 +1078,11 @@ export default function Home() {
         </div>
 
         {/* ───── Action Buttons ───── */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-10">
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-10">
           {user ? (
             <button
               onClick={handleCalculate}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] cursor-pointer text-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] cursor-pointer text-sm"
             >
               <Calculator className="w-4 h-4" />
               Calculate Flip Profit
@@ -1090,7 +1090,7 @@ export default function Home() {
           ) : (
             <a
               href="/signup"
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] cursor-pointer text-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] cursor-pointer text-sm"
             >
               <Lock className="w-4 h-4" />
               Sign Up Free to Calculate
@@ -1170,7 +1170,7 @@ export default function Home() {
         {/* ───── Email Modal ───── */}
         {showEmailModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-surface-1 border border-edge rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
+            <div className="bg-surface-1 border border-edge rounded-2xl p-4 sm:p-6 w-full max-w-md mx-3 sm:mx-4 shadow-xl">
               <h3 className="text-lg font-bold text-tx mb-1">Email Report</h3>
               <p className="text-sm text-tx-muted mb-4">
                 Send the feasibility report as a PDF attachment.
