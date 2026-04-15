@@ -170,71 +170,182 @@ export function calculateStampDuty(price: number, state: AustralianState): numbe
 }
 
 // ============================================================================
-// LMI (Lenders Mortgage Insurance) — Realistic 2D Rate Table
-// Based on Australian LMI insurer data (Helia/QBE indicative rates 2025-26).
-// Premium is a % of the base LOAN amount, varying by LVR band AND loan size.
+// LMI (Lenders Mortgage Insurance) — Investment Property Rate Table
+// Source: Home Loan Experts (homeloanexperts.com.au) — Helia indicative rates
+// Investment loading: +25% over owner-occupier rates (industry standard 20-25%)
+//
+// Premium is a % of the base LOAN amount, varying by exact LVR band AND loan size.
 // LMI is capitalised (added to the loan), so interest accrues on it.
 //
-// Sources: yourmortgage.com.au, landsales.com.au, savings.com.au LMI guides
-// These are estimates — actual LMI varies by lender, insurer, and borrower profile.
+// IMPORTANT: This calculator targets PROPERTY INVESTORS (flippers), so we use
+// investment property rates, not owner-occupier rates.
 // ============================================================================
 
 interface LmiRateBand {
   maxLoan: number;
-  rate: number; // as a decimal, e.g. 0.008 = 0.8%
+  rate: number; // owner-occupier base rate as decimal
 }
 
-// 2D lookup: LVR band → loan amount tiers → premium rate (% of loan)
-const LMI_RATES: { minLvr: number; maxLvr: number; bands: LmiRateBand[] }[] = [
-  {
-    minLvr: 80, maxLvr: 85,
-    bands: [
-      { maxLoan: 300000,   rate: 0.0070 },
-      { maxLoan: 500000,   rate: 0.0080 },
-      { maxLoan: 750000,   rate: 0.0092 },
-      { maxLoan: 1000000,  rate: 0.0098 },
-      { maxLoan: Infinity, rate: 0.0105 },
-    ],
-  },
-  {
-    minLvr: 85, maxLvr: 90,
-    bands: [
-      { maxLoan: 300000,   rate: 0.0165 },
-      { maxLoan: 500000,   rate: 0.0182 },
-      { maxLoan: 750000,   rate: 0.0205 },
-      { maxLoan: 1000000,  rate: 0.0220 },
-      { maxLoan: Infinity, rate: 0.0240 },
-    ],
-  },
-  {
-    minLvr: 90, maxLvr: 95,
-    bands: [
-      { maxLoan: 300000,   rate: 0.0360 },
-      { maxLoan: 500000,   rate: 0.0430 },
-      { maxLoan: 750000,   rate: 0.0465 },
-      { maxLoan: 1000000,  rate: 0.0500 },
-      { maxLoan: Infinity, rate: 0.0520 },
-    ],
-  },
+// 1% LVR brackets — exact Helia rates from Home Loan Experts (Mar 2026)
+// Each entry: LVR ceiling → loan-amount tiered rates
+const LMI_OWNER_OCCUPIER_RATES: { maxLvr: number; bands: LmiRateBand[] }[] = [
+  // 80.01–81%
+  { maxLvr: 81, bands: [
+    { maxLoan: 300000,   rate: 0.00475 },
+    { maxLoan: 500000,   rate: 0.00568 },
+    { maxLoan: 600000,   rate: 0.00904 },
+    { maxLoan: 750000,   rate: 0.00904 },
+    { maxLoan: 1000000,  rate: 0.00913 },
+    { maxLoan: Infinity, rate: 0.00913 },
+  ]},
+  // 81.01–82%
+  { maxLvr: 82, bands: [
+    { maxLoan: 300000,   rate: 0.00485 },
+    { maxLoan: 500000,   rate: 0.00568 },
+    { maxLoan: 600000,   rate: 0.00904 },
+    { maxLoan: 750000,   rate: 0.00904 },
+    { maxLoan: 1000000,  rate: 0.00913 },
+    { maxLoan: Infinity, rate: 0.00913 },
+  ]},
+  // 82.01–83%
+  { maxLvr: 83, bands: [
+    { maxLoan: 300000,   rate: 0.00596 },
+    { maxLoan: 500000,   rate: 0.00699 },
+    { maxLoan: 600000,   rate: 0.00932 },
+    { maxLoan: 750000,   rate: 0.01090 },
+    { maxLoan: 1000000,  rate: 0.01109 },
+    { maxLoan: Infinity, rate: 0.01109 },
+  ]},
+  // 83.01–84%
+  { maxLvr: 84, bands: [
+    { maxLoan: 300000,   rate: 0.00662 },
+    { maxLoan: 500000,   rate: 0.00829 },
+    { maxLoan: 600000,   rate: 0.00960 },
+    { maxLoan: 750000,   rate: 0.01090 },
+    { maxLoan: 1000000,  rate: 0.01146 },
+    { maxLoan: Infinity, rate: 0.01146 },
+  ]},
+  // 84.01–85%
+  { maxLvr: 85, bands: [
+    { maxLoan: 300000,   rate: 0.00727 },
+    { maxLoan: 500000,   rate: 0.00969 },
+    { maxLoan: 600000,   rate: 0.01165 },
+    { maxLoan: 750000,   rate: 0.01333 },
+    { maxLoan: 1000000,  rate: 0.01407 },
+    { maxLoan: Infinity, rate: 0.01407 },
+  ]},
+  // 85.01–86%
+  { maxLvr: 86, bands: [
+    { maxLoan: 300000,   rate: 0.00876 },
+    { maxLoan: 500000,   rate: 0.01081 },
+    { maxLoan: 600000,   rate: 0.01258 },
+    { maxLoan: 750000,   rate: 0.01407 },
+    { maxLoan: 1000000,  rate: 0.01463 },
+    { maxLoan: Infinity, rate: 0.01463 },
+  ]},
+  // 86.01–87%
+  { maxLvr: 87, bands: [
+    { maxLoan: 300000,   rate: 0.00932 },
+    { maxLoan: 500000,   rate: 0.01146 },
+    { maxLoan: 600000,   rate: 0.01407 },
+    { maxLoan: 750000,   rate: 0.01631 },
+    { maxLoan: 1000000,  rate: 0.01733 },
+    { maxLoan: Infinity, rate: 0.01733 },
+  ]},
+  // 87.01–88%
+  { maxLvr: 88, bands: [
+    { maxLoan: 300000,   rate: 0.01062 },
+    { maxLoan: 500000,   rate: 0.01305 },
+    { maxLoan: 600000,   rate: 0.01463 },
+    { maxLoan: 750000,   rate: 0.01631 },
+    { maxLoan: 1000000,  rate: 0.01752 },
+    { maxLoan: Infinity, rate: 0.01752 },
+  ]},
+  // 88.01–89%
+  { maxLvr: 89, bands: [
+    { maxLoan: 300000,   rate: 0.01295 },
+    { maxLoan: 500000,   rate: 0.01621 },
+    { maxLoan: 600000,   rate: 0.01948 },
+    { maxLoan: 750000,   rate: 0.02218 },
+    { maxLoan: 1000000,  rate: 0.02395 },
+    { maxLoan: Infinity, rate: 0.02395 },
+  ]},
+  // 89.01–90% — 10% deposit
+  { maxLvr: 90, bands: [
+    { maxLoan: 300000,   rate: 0.01463 },
+    { maxLoan: 500000,   rate: 0.01873 },
+    { maxLoan: 600000,   rate: 0.02180 },
+    { maxLoan: 750000,   rate: 0.02367 },
+    { maxLoan: 1000000,  rate: 0.02516 },
+    { maxLoan: Infinity, rate: 0.02516 },
+  ]},
+  // 90.01–91%
+  { maxLvr: 91, bands: [
+    { maxLoan: 300000,   rate: 0.02013 },
+    { maxLoan: 500000,   rate: 0.02618 },
+    { maxLoan: 600000,   rate: 0.03513 },
+    { maxLoan: 750000,   rate: 0.03783 },
+    { maxLoan: 1000000,  rate: 0.03820 },
+    { maxLoan: Infinity, rate: 0.03820 },
+  ]},
+  // 91.01–92%
+  { maxLvr: 92, bands: [
+    { maxLoan: 300000,   rate: 0.02013 },
+    { maxLoan: 500000,   rate: 0.02674 },
+    { maxLoan: 600000,   rate: 0.03569 },
+    { maxLoan: 750000,   rate: 0.03867 },
+    { maxLoan: 1000000,  rate: 0.03932 },
+    { maxLoan: Infinity, rate: 0.03932 },
+  ]},
+  // 92.01–93%
+  { maxLvr: 93, bands: [
+    { maxLoan: 300000,   rate: 0.02330 },
+    { maxLoan: 500000,   rate: 0.03028 },
+    { maxLoan: 600000,   rate: 0.03802 },
+    { maxLoan: 750000,   rate: 0.04081 },
+    { maxLoan: 1000000,  rate: 0.04156 },
+    { maxLoan: Infinity, rate: 0.04156 },
+  ]},
+  // 93.01–94%
+  { maxLvr: 94, bands: [
+    { maxLoan: 300000,   rate: 0.02376 },
+    { maxLoan: 500000,   rate: 0.03028 },
+    { maxLoan: 600000,   rate: 0.03802 },
+    { maxLoan: 750000,   rate: 0.04286 },
+    { maxLoan: 1000000,  rate: 0.04324 },
+    { maxLoan: Infinity, rate: 0.04324 },
+  ]},
+  // 94.01–95% — 5% deposit
+  { maxLvr: 95, bands: [
+    { maxLoan: 300000,   rate: 0.02609 },
+    { maxLoan: 500000,   rate: 0.03345 },
+    { maxLoan: 600000,   rate: 0.03998 },
+    { maxLoan: 750000,   rate: 0.04613 },
+    { maxLoan: 1000000,  rate: 0.04603 },
+    { maxLoan: Infinity, rate: 0.04603 },
+  ]},
 ];
+
+// Investment property loading — Helia/QBE charge ~25% premium over owner-occupier
+const INVESTMENT_LOADING = 1.25;
 
 export function calculateLMI(loanAmount: number, lvr: number): number {
   if (lvr <= 80 || loanAmount <= 0) return 0;
 
-  // Find the matching LVR band
-  const lvrBand = LMI_RATES.find((b) => lvr > b.minLvr && lvr <= b.maxLvr);
+  // Find the matching LVR bracket (1% bands) — first one where lvr <= maxLvr
+  const lvrBand = LMI_OWNER_OCCUPIER_RATES.find((b) => lvr <= b.maxLvr);
   if (!lvrBand) {
-    // LVR > 95% — use highest tier rate
-    const highest = LMI_RATES[LMI_RATES.length - 1];
+    // LVR > 95% — use highest bracket's highest tier
+    const highest = LMI_OWNER_OCCUPIER_RATES[LMI_OWNER_OCCUPIER_RATES.length - 1];
     const tier = highest.bands[highest.bands.length - 1];
-    return Math.round(loanAmount * tier.rate);
+    return Math.round(loanAmount * tier.rate * INVESTMENT_LOADING);
   }
 
   // Find the matching loan amount tier
   const tier = lvrBand.bands.find((b) => loanAmount <= b.maxLoan);
   const rate = tier ? tier.rate : lvrBand.bands[lvrBand.bands.length - 1].rate;
 
-  return Math.round(loanAmount * rate);
+  return Math.round(loanAmount * rate * INVESTMENT_LOADING);
 }
 
 // ============================================================================
@@ -301,11 +412,30 @@ export interface SalesMarketingCosts {
 }
 
 export interface PrivateFundingIncludes {
+  // Acquisition
   deposit: boolean;
   stampDuty: boolean;
+  transferRegistration: boolean;
+  mortgageRegistration: boolean;
+  lmi: boolean;
+  legalCosts: boolean;
+  // Renovation
   renovation: boolean;
-  additionalCosts: boolean;
+  // Additional costs (one-off)
+  buildingAndPest: boolean;
+  settlementFee: boolean;
+  projectManagementFee: boolean;
+  siteDueDiligenceFee: boolean;
+  brokerageFee: boolean;
+  // Holding costs
+  councilRates: boolean;
+  waterRates: boolean;
+  power: boolean;
+  insurance: boolean;
   interestCosts: boolean;
+  // Sales & marketing
+  salesAndMarketing: boolean;
+  // Other
   otherAmount: number;
 }
 
@@ -457,24 +587,6 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
     holdingCostsPower +
     holdingCostsInsurance;
 
-  // --- PRIVATE FUNDING ---
-  // Derive the private funding amount from the selected checkbox items
-  let privateFundingAmount = 0;
-  let privateFundingInterest = 0;
-  if (pf.enabled) {
-    if (pf.includes.deposit) privateFundingAmount += deposit;
-    if (pf.includes.stampDuty) privateFundingAmount += stampDuty;
-    if (pf.includes.renovation) privateFundingAmount += totalRenovationCost;
-    if (pf.includes.additionalCosts) privateFundingAmount += totalAdditionalCosts;
-    if (pf.includes.interestCosts) privateFundingAmount += totalInterestCost;
-    privateFundingAmount += pf.includes.otherAmount;
-
-    if (privateFundingAmount > 0) {
-      const pfMonthlyRate = pf.interestRate / 100 / 12;
-      privateFundingInterest = Math.round(privateFundingAmount * pfMonthlyRate * pf.timeFrameMonths);
-    }
-  }
-
   // --- SELLING / SALES & MARKETING ---
   const agentCommission = expectedSalePrice * (sm.agentCommissionPercent / 100);
   const settlementCosts = sm.settlementCosts;
@@ -483,6 +595,44 @@ export function calculate(inputs: CalculatorInputs): CalculatorResults {
   const otherSellingCosts = sm.otherCosts;
   const totalSellingCosts =
     agentCommission + settlementCosts + stagingCosts + photosAndListing + otherSellingCosts;
+
+  // --- PRIVATE FUNDING ---
+  // Derive the private funding amount from the selected checkbox items.
+  // Now supports ALL costs in the calculator.
+  let privateFundingAmount = 0;
+  let privateFundingInterest = 0;
+  if (pf.enabled) {
+    // Acquisition
+    if (pf.includes.deposit) privateFundingAmount += deposit;
+    if (pf.includes.stampDuty) privateFundingAmount += stampDuty;
+    if (pf.includes.transferRegistration) privateFundingAmount += transferRegistration;
+    if (pf.includes.mortgageRegistration) privateFundingAmount += mortgageRegistration;
+    if (pf.includes.lmi) privateFundingAmount += lmi;
+    if (pf.includes.legalCosts) privateFundingAmount += legalCostsBuy;
+    // Renovation
+    if (pf.includes.renovation) privateFundingAmount += totalRenovationCost;
+    // Additional costs (one-off)
+    if (pf.includes.buildingAndPest) privateFundingAmount += ac.buildingAndPest;
+    if (pf.includes.settlementFee) privateFundingAmount += ac.settlementFee;
+    if (pf.includes.projectManagementFee) privateFundingAmount += ac.projectManagementFee;
+    if (pf.includes.siteDueDiligenceFee) privateFundingAmount += ac.siteDueDiligenceFee;
+    if (pf.includes.brokerageFee) privateFundingAmount += ac.brokerageFee;
+    // Holding costs
+    if (pf.includes.councilRates) privateFundingAmount += ac.councilRates;
+    if (pf.includes.waterRates) privateFundingAmount += ac.waterRates;
+    if (pf.includes.power) privateFundingAmount += ac.power;
+    if (pf.includes.insurance) privateFundingAmount += ac.insurance;
+    if (pf.includes.interestCosts) privateFundingAmount += totalInterestCost;
+    // Sales & marketing
+    if (pf.includes.salesAndMarketing) privateFundingAmount += totalSellingCosts;
+    // Other manual amount
+    privateFundingAmount += pf.includes.otherAmount;
+
+    if (privateFundingAmount > 0) {
+      const pfMonthlyRate = pf.interestRate / 100 / 12;
+      privateFundingInterest = Math.round(privateFundingAmount * pfMonthlyRate * pf.timeFrameMonths);
+    }
+  }
 
   // --- TOTALS ---
   // Additional costs items that are NOT already in holding costs

@@ -8,7 +8,6 @@ import { useTheme } from "@/components/ThemeProvider";
 import { createClient } from "@/lib/supabase/client";
 import {
   Calculator,
-  LayoutGrid,
   FolderOpen,
   Crown,
   ShieldAlert,
@@ -20,15 +19,13 @@ import {
   ChevronRight,
   Menu,
   X,
-  DollarSign,
-  MapPin,
-  Settings,
   Zap,
 } from "lucide-react";
 
-interface BoardLink {
+interface ProjectLink {
   id: string;
   name: string;
+  property_address: string | null;
 }
 
 export default function Sidebar() {
@@ -38,23 +35,28 @@ export default function Sidebar() {
   const supabase = createClient();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [wsExpanded, setWsExpanded] = useState(true);
-  const [boards, setBoards] = useState<BoardLink[]>([]);
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const [savedProjects, setSavedProjects] = useState<ProjectLink[]>([]);
 
-  const fetchBoards = useCallback(async () => {
+  const fetchSavedProjects = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
-      .from("boards")
-      .select("id, name")
+      .from("saved_projects")
+      .select("id, name, property_address")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(20);
-    if (data) setBoards(data);
+    if (data) setSavedProjects(data);
   }, [user, supabase]);
 
   useEffect(() => {
-    if (user) fetchBoards();
-  }, [user, fetchBoards]);
+    if (user) fetchSavedProjects();
+  }, [user, fetchSavedProjects]);
+
+  // Refetch on path change (so newly-saved projects appear after returning to sidebar)
+  useEffect(() => {
+    if (user) fetchSavedProjects();
+  }, [user, pathname, fetchSavedProjects]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -103,62 +105,62 @@ export default function Sidebar() {
           Calculator
         </Link>
 
-        {false && user && (
-          <>
-            {/* Workspace section — dev only */}
-            <div className="mt-3">
-              <button
-                onClick={() => setWsExpanded(!wsExpanded)}
-                className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-semibold text-tx-muted uppercase tracking-wider hover:text-tx-secondary transition-colors cursor-pointer"
-              >
-                <span>Workspace</span>
-                {wsExpanded ? (
-                  <ChevronDown className="w-3 h-3" />
+        {/* My Projects section — visible to logged in users */}
+        {user && (
+          <div className="mt-3">
+            <button
+              onClick={() => setProjectsExpanded(!projectsExpanded)}
+              className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-semibold text-tx-muted uppercase tracking-wider hover:text-tx-secondary transition-colors cursor-pointer"
+            >
+              <span>My Projects</span>
+              {projectsExpanded ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+            </button>
+
+            {projectsExpanded && (
+              <div className="space-y-0.5 mt-0.5">
+                <Link
+                  href="/projects"
+                  className={navLinkClass("/projects")}
+                >
+                  <FolderOpen className="w-4 h-4" />
+                  All Projects
+                </Link>
+
+                {/* Saved project list */}
+                {savedProjects.length === 0 ? (
+                  <p className="px-3 py-1.5 text-[10px] text-tx-muted/60 italic">
+                    No saved projects yet
+                  </p>
                 ) : (
-                  <ChevronRight className="w-3 h-3" />
-                )}
-              </button>
-
-              {wsExpanded && (
-                <div className="space-y-0.5 mt-0.5">
-                  <Link
-                    href="/workspace"
-                    className={navLinkClass("/workspace")}
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                    All Boards
-                  </Link>
-
-                  {/* Board list */}
-                  {boards.map((b) => (
+                  savedProjects.map((p) => (
                     <Link
-                      key={b.id}
-                      href={`/workspace/${b.id}`}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors truncate ${
-                        pathname === `/workspace/${b.id}`
+                      key={p.id}
+                      href={`/projects/${p.id}`}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                        pathname === `/projects/${p.id}`
                           ? "bg-accent/10 text-accent font-medium"
                           : "text-tx-muted hover:text-tx-secondary hover:bg-surface-2/40"
                       }`}
+                      title={p.property_address || p.name}
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-accent/40 shrink-0" />
-                      <span className="truncate">{b.name}</span>
+                      <span className="truncate">{p.property_address || p.name}</span>
                     </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Link href="/projects" className={navLinkClass("/projects")}>
-              <FolderOpen className="w-4 h-4" />
-              My Projects
-            </Link>
-          </>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         )}
 
-        {false && !isPro && user && (
+        {!isPro && user && (
           <Link
             href="/pricing"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-amber-500 hover:bg-amber-500/10 transition-colors"
+            className="flex items-center gap-2.5 px-3 py-2 mt-1 rounded-lg text-sm font-medium text-amber-500 hover:bg-amber-500/10 transition-colors"
           >
             <Crown className="w-4 h-4" />
             Upgrade to Pro

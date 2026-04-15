@@ -5,6 +5,8 @@ import {
   calculate,
   calculateStampDuty,
   calculateLMI,
+  calculateTransferRegistration,
+  calculateMortgageRegistration,
   STATE_DATA,
   type CalculatorInputs,
   type CalculatorResults,
@@ -257,7 +259,7 @@ function AddressInput({
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const DEPOSIT_OPTIONS = [5, 10, 15, 20] as const;
+const DEPOSIT_OPTIONS = [5, 10, 15, 20, 30] as const;
 
 const DEFAULT_ADDITIONAL_COSTS: AdditionalCosts = {
   buildingAndPest: 0,
@@ -284,9 +286,22 @@ const DEFAULT_PRIVATE_FUNDING: PrivateFunding = {
   includes: {
     deposit: false,
     stampDuty: false,
+    transferRegistration: false,
+    mortgageRegistration: false,
+    lmi: false,
+    legalCosts: false,
     renovation: false,
-    additionalCosts: false,
+    buildingAndPest: false,
+    settlementFee: false,
+    projectManagementFee: false,
+    siteDueDiligenceFee: false,
+    brokerageFee: false,
+    councilRates: false,
+    waterRates: false,
+    power: false,
+    insurance: false,
     interestCosts: false,
+    salesAndMarketing: false,
     otherAmount: 0,
   },
   interestRate: 10,
@@ -516,17 +531,9 @@ export default function Home() {
 
   // Pre-compute values for private funding checkbox hints
   const stampDutyEstimate = calculateStampDuty(inputs.purchasePrice, inputs.state);
-
-  const additionalCostsTotal =
-    inputs.additionalCosts.buildingAndPest +
-    inputs.additionalCosts.settlementFee +
-    inputs.additionalCosts.projectManagementFee +
-    inputs.additionalCosts.siteDueDiligenceFee +
-    inputs.additionalCosts.brokerageFee +
-    inputs.additionalCosts.councilRates +
-    inputs.additionalCosts.waterRates +
-    inputs.additionalCosts.power +
-    inputs.additionalCosts.insurance;
+  const transferRegEstimate = calculateTransferRegistration(inputs.purchasePrice, inputs.state);
+  const mortgageRegEstimate = calculateMortgageRegistration(inputs.state);
+  const lmiEstimate = derivedLvr > 80 ? calculateLMI(loanAmount, derivedLvr) : 0;
 
   const effectiveRenoCost = (() => {
     const base = renoMode === "detailed" ? grandTotal(renoSections) : inputs.renovationCost;
@@ -534,11 +541,17 @@ export default function Home() {
   })();
 
   const interestCostEstimate = (() => {
-    const lmi = derivedLvr > 80 ? calculateLMI(loanAmount, derivedLvr) : 0;
-    const effectiveLoan = loanAmount + lmi;
+    const effectiveLoan = loanAmount + lmiEstimate;
     const monthlyRate = inputs.interestRate / 100 / 12;
     return Math.round(effectiveLoan * monthlyRate * inputs.holdingPeriodMonths);
   })();
+
+  const salesMarketingEstimate =
+    inputs.expectedSalePrice * (inputs.salesMarketing.agentCommissionPercent / 100) +
+    inputs.salesMarketing.settlementCosts +
+    inputs.salesMarketing.stagingCosts +
+    inputs.salesMarketing.photosAndListing +
+    inputs.salesMarketing.otherCosts;
 
   const update = useCallback(
     (field: keyof CalculatorInputs, value: number | string) => {
@@ -796,21 +809,29 @@ export default function Home() {
                 <FileText className="w-3 h-3" />
                 Simple Budget
               </button>
-              <button
-                onClick={() => {
-                  if (!isPro) return; // ProGate will show overlay
-                  setRenoMode("detailed");
-                }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border ${
-                  renoMode === "detailed"
-                    ? "bg-accent/10 text-accent border-accent/30"
-                    : "bg-surface-2/50 text-tx-muted border-edge hover:bg-surface-2"
-                } ${!isPro ? "opacity-60" : ""}`}
-              >
-                <List className="w-3 h-3" />
-                Detailed Budget
-                {!isPro && <Crown className="w-3 h-3 text-amber-500 ml-0.5" />}
-              </button>
+              {isPro ? (
+                <button
+                  onClick={() => setRenoMode("detailed")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border ${
+                    renoMode === "detailed"
+                      ? "bg-accent/10 text-accent border-accent/30"
+                      : "bg-surface-2/50 text-tx-muted border-edge hover:bg-surface-2"
+                  }`}
+                >
+                  <List className="w-3 h-3" />
+                  Detailed Budget
+                </button>
+              ) : (
+                <a
+                  href={user ? "/pricing" : "/signup"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border bg-surface-2/50 text-tx-muted border-edge hover:bg-surface-2 hover:text-tx-secondary transition-colors"
+                  title={user ? "Upgrade to Pro" : "Sign up to unlock"}
+                >
+                  <List className="w-3 h-3" />
+                  Detailed Budget
+                  <Crown className="w-3 h-3 text-amber-500 ml-0.5" />
+                </a>
+              )}
             </div>
 
             {renoMode === "simple" ? (
@@ -960,17 +981,133 @@ export default function Home() {
                   {/* Checkbox items to include */}
                   <div>
                     <p className="text-xs font-medium text-tx-muted uppercase tracking-wider mb-2">Include in Private Funding</p>
+
+                    {/* Group: Acquisition */}
+                    <p className="text-[10px] font-semibold text-tx-muted/70 uppercase tracking-wider mt-1 mb-1.5">Acquisition</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {([
                         ["deposit", "Deposit", fmt(depositAmount)],
                         ["stampDuty", "Stamp Duty", fmt(stampDutyEstimate)],
-                        ["renovation", "Renovation", fmt(effectiveRenoCost)],
-                        ["additionalCosts", "Additional Costs", fmt(additionalCostsTotal)],
+                        ["transferRegistration", "Registration of Transfer", fmt(transferRegEstimate)],
+                        ["mortgageRegistration", "Registration of Mortgage", fmt(mortgageRegEstimate)],
+                        ["lmi", "LMI", fmt(lmiEstimate)],
+                        ["legalCosts", "Legal / Conveyancing", fmt(1500)],
+                      ] as [keyof Omit<PrivateFundingIncludes, "otherAmount">, string, string][]).map(([key, label, hint]) => (
+                        <label
+                          key={key}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                            inputs.privateFunding.includes[key]
+                              ? "bg-accent/10 border-accent/30 text-tx"
+                              : "bg-surface-2/30 border-edge text-tx-secondary hover:bg-surface-2/60"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={inputs.privateFunding.includes[key] as boolean}
+                            onChange={(e) => updatePfIncludes(key, e.target.checked)}
+                            className="w-4 h-4 rounded border-input-border accent-accent cursor-pointer"
+                          />
+                          <span className="text-sm font-medium flex-1">{label}</span>
+                          {hint && <span className="text-[11px] text-tx-muted font-mono">{hint}</span>}
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Group: Renovation */}
+                    <p className="text-[10px] font-semibold text-tx-muted/70 uppercase tracking-wider mt-3 mb-1.5">Renovation</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {([
+                        ["renovation", "Renovation (incl. contingency)", fmt(effectiveRenoCost)],
+                      ] as [keyof Omit<PrivateFundingIncludes, "otherAmount">, string, string][]).map(([key, label, hint]) => (
+                        <label
+                          key={key}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                            inputs.privateFunding.includes[key]
+                              ? "bg-accent/10 border-accent/30 text-tx"
+                              : "bg-surface-2/30 border-edge text-tx-secondary hover:bg-surface-2/60"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={inputs.privateFunding.includes[key] as boolean}
+                            onChange={(e) => updatePfIncludes(key, e.target.checked)}
+                            className="w-4 h-4 rounded border-input-border accent-accent cursor-pointer"
+                          />
+                          <span className="text-sm font-medium flex-1">{label}</span>
+                          {hint && <span className="text-[11px] text-tx-muted font-mono">{hint}</span>}
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Group: Additional Costs (one-off) */}
+                    <p className="text-[10px] font-semibold text-tx-muted/70 uppercase tracking-wider mt-3 mb-1.5">Additional Costs</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {([
+                        ["buildingAndPest", "Building & Pest", fmt(inputs.additionalCosts.buildingAndPest)],
+                        ["settlementFee", "Settlement Fee", fmt(inputs.additionalCosts.settlementFee)],
+                        ["projectManagementFee", "Project Management", fmt(inputs.additionalCosts.projectManagementFee)],
+                        ["siteDueDiligenceFee", "Site & Due Diligence", fmt(inputs.additionalCosts.siteDueDiligenceFee)],
+                        ["brokerageFee", "Brokerage Fee", fmt(inputs.additionalCosts.brokerageFee)],
+                      ] as [keyof Omit<PrivateFundingIncludes, "otherAmount">, string, string][]).map(([key, label, hint]) => (
+                        <label
+                          key={key}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                            inputs.privateFunding.includes[key]
+                              ? "bg-accent/10 border-accent/30 text-tx"
+                              : "bg-surface-2/30 border-edge text-tx-secondary hover:bg-surface-2/60"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={inputs.privateFunding.includes[key] as boolean}
+                            onChange={(e) => updatePfIncludes(key, e.target.checked)}
+                            className="w-4 h-4 rounded border-input-border accent-accent cursor-pointer"
+                          />
+                          <span className="text-sm font-medium flex-1">{label}</span>
+                          {hint && <span className="text-[11px] text-tx-muted font-mono">{hint}</span>}
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Group: Holding Costs */}
+                    <p className="text-[10px] font-semibold text-tx-muted/70 uppercase tracking-wider mt-3 mb-1.5">Holding Costs</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {([
+                        ["councilRates", "Council Rates", fmt(inputs.additionalCosts.councilRates)],
+                        ["waterRates", "Water Rates", fmt(inputs.additionalCosts.waterRates)],
+                        ["power", "Power", fmt(inputs.additionalCosts.power)],
+                        ["insurance", "Insurance", fmt(inputs.additionalCosts.insurance)],
                         ["interestCosts", "Interest Costs on Loan", fmt(interestCostEstimate)],
                       ] as [keyof Omit<PrivateFundingIncludes, "otherAmount">, string, string][]).map(([key, label, hint]) => (
                         <label
                           key={key}
-                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-all ${
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                            inputs.privateFunding.includes[key]
+                              ? "bg-accent/10 border-accent/30 text-tx"
+                              : "bg-surface-2/30 border-edge text-tx-secondary hover:bg-surface-2/60"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={inputs.privateFunding.includes[key] as boolean}
+                            onChange={(e) => updatePfIncludes(key, e.target.checked)}
+                            className="w-4 h-4 rounded border-input-border accent-accent cursor-pointer"
+                          />
+                          <span className="text-sm font-medium flex-1">{label}</span>
+                          {hint && <span className="text-[11px] text-tx-muted font-mono">{hint}</span>}
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Group: Sales & Marketing */}
+                    <p className="text-[10px] font-semibold text-tx-muted/70 uppercase tracking-wider mt-3 mb-1.5">Sales & Marketing</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {([
+                        ["salesAndMarketing", "Sales & Marketing (total)", fmt(salesMarketingEstimate)],
+                      ] as [keyof Omit<PrivateFundingIncludes, "otherAmount">, string, string][]).map(([key, label, hint]) => (
+                        <label
+                          key={key}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
                             inputs.privateFunding.includes[key]
                               ? "bg-accent/10 border-accent/30 text-tx"
                               : "bg-surface-2/30 border-edge text-tx-secondary hover:bg-surface-2/60"
@@ -1136,33 +1273,33 @@ export default function Home() {
             </>
           ) : (
             <>
-              <button
-                disabled
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2/50 text-tx-muted font-medium rounded-xl border border-edge text-sm opacity-60 cursor-not-allowed"
-                title="Pro feature"
+              <a
+                href={user ? "/pricing" : "/signup"}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary hover:text-tx font-medium rounded-xl border border-edge cursor-pointer text-sm transition-colors"
+                title={user ? "Upgrade to Pro" : "Sign up to unlock"}
               >
                 <Lock className="w-4 h-4" />
                 Download PDF
                 <Crown className="w-3 h-3 text-amber-500" />
-              </button>
-              <button
-                disabled
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2/50 text-tx-muted font-medium rounded-xl border border-edge text-sm opacity-60 cursor-not-allowed"
-                title="Pro feature"
+              </a>
+              <a
+                href={user ? "/pricing" : "/signup"}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary hover:text-tx font-medium rounded-xl border border-edge cursor-pointer text-sm transition-colors"
+                title={user ? "Upgrade to Pro" : "Sign up to unlock"}
               >
                 <Lock className="w-4 h-4" />
                 Email Report
                 <Crown className="w-3 h-3 text-amber-500" />
-              </button>
-              <button
-                disabled
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2/50 text-tx-muted font-medium rounded-xl border border-edge text-sm opacity-60 cursor-not-allowed"
-                title="Pro feature"
+              </a>
+              <a
+                href={user ? "/pricing" : "/signup"}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-tx-secondary hover:text-tx font-medium rounded-xl border border-edge cursor-pointer text-sm transition-colors"
+                title={user ? "Upgrade to Pro" : "Sign up to unlock"}
               >
                 <Lock className="w-4 h-4" />
                 Save Project
                 <Crown className="w-3 h-3 text-amber-500" />
-              </button>
+              </a>
             </>
           )}
         </div>
@@ -1282,10 +1419,12 @@ export default function Home() {
               <div className="bg-surface-1 border border-edge rounded-2xl p-5" style={{ boxShadow: "var(--card-shadow)" }}>
                 <SectionHeader icon={<Receipt className="w-4.5 h-4.5" />}>Buying Costs</SectionHeader>
                 <div className="space-y-2.5">
+                  {/* Purchase + Loan structure (per client spec) */}
                   <CostLine label="Purchase Price" value={fmt(inputs.purchasePrice)} />
-                  <CostLine label={`Stamp Duty (${inputs.state})`} value={fmt(results.stampDuty)} />
-                  <CostLine label="Registration of Transfer" value={fmt(results.transferRegistration)} />
-                  <CostLine label="Registration of Mortgage" value={fmt(results.mortgageRegistration)} />
+                  <CostLine
+                    label={`Loan ${100 - inputs.depositPercent}%`}
+                    value={fmt(results.loanAmount)}
+                  />
                   {results.lmi > 0 && (
                     <div className="flex justify-between items-center py-0.5">
                       <span className="text-sm text-amber-500 flex items-center gap-1">
@@ -1297,6 +1436,17 @@ export default function Home() {
                       </span>
                     </div>
                   )}
+                  <CostLine
+                    label="Loan Total"
+                    value={fmt(results.effectiveLoan)}
+                    bold
+                  />
+
+                  <div className="border-t border-edge my-2.5" />
+
+                  <CostLine label={`Stamp Duty (${inputs.state})`} value={fmt(results.stampDuty)} />
+                  <CostLine label="Registration of Transfer" value={fmt(results.transferRegistration)} />
+                  <CostLine label="Registration of Mortgage" value={fmt(results.mortgageRegistration)} />
                   <CostLine label="Legal / Conveyancing" value={fmt(results.legalCostsBuy)} />
 
                   {/* Additional Costs breakdown */}
